@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: probuild
+          POSTGRES_PASSWORD: probuild
+          POSTGRES_DB: probuild_test
+        ports: ['5435:5432']
+        options: >-
+          --health-cmd "pg_isready -U probuild"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://probuild:probuild@localhost:5435/probuild_test?schema=public
+      TEST_DATABASE_URL: postgresql://probuild:probuild@localhost:5435/probuild_test?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prisma schema valid and client generated
+        run: pnpm --filter @probuild/api exec prisma validate && pnpm --filter @probuild/api exec prisma generate
+      - name: Migrations apply to an empty database
+        run: pnpm --filter @probuild/api exec prisma migrate deploy
+      - name: No schema drift between schema files and migrations
+        run: pnpm --filter @probuild/api exec prisma migrate diff --from-migrations prisma/schema/migrations --to-schema-datamodel prisma/schema --shadow-database-url "$DATABASE_URL" --exit-code
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Integration tests (real database)
+        run: pnpm --filter @probuild/api test:e2e
+      - run: pnpm build
+      - name: OpenAPI and API client are up to date
+        run: |
+          pnpm api-client
+          git diff --exit-code packages/api-client

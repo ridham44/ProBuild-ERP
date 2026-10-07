@@ -170,6 +170,7 @@ model Project {
   drawings                  Drawing[]
   closeoutItems             CloseoutItem[]
   warrantyRecords           WarrantyRecord[]
+  journalLines              JournalLine[]
 
   @@unique([companyId, code])
   @@index([branchId])
@@ -244,6 +245,7 @@ model WbsNode {
   budgetLines              BudgetLine[]
   scheduleActivities       ScheduleActivity[]
   rfis                     Rfi[]
+  journalLines             JournalLine[]
 
   @@unique([projectId, code])
   @@index([companyId])
@@ -273,6 +275,7 @@ model CostCode {
   purchaseOrderLines       PurchaseOrderLine[]
   boqItems                 BoqItem[]
   budgetLines              BudgetLine[]
+  journalLines             JournalLine[]
 
   @@unique([companyId, code])
   @@index([parentId])
@@ -319,6 +322,7 @@ model BoqItem {
   section                  String?
   itemNo                   String
   description              String
+  costCategory             CostCategory              @default(MATERIAL)
   unit                     String
   quantity                 Decimal                   @db.Decimal(18, 4)
   unitRate                 Decimal                   @default(0) @db.Decimal(18, 4)

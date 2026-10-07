@@ -42,7 +42,7 @@ export const updateCostCenterSchema = createCostCenterSchema.partial().extend({ 
 export const createWarehouseSchema = z.object({
   code: codeSchema,
   name: nameSchema,
-  type: z.enum(WAREHOUSE_TYPES).default('CENTRAL'),
+  type: z.enum(WAREHOUSE_TYPES).optional(),
   branchId: idSchema.nullish(),
   projectId: idSchema.nullish(),
   parentWarehouseId: idSchema.nullish(),
@@ -62,8 +62,8 @@ export const createBankAccountSchema = z.object({
   branchName: z.string().max(120).nullish(),
   accountName: nameSchema,
   accountNo: z.string().trim().min(1).max(40),
-  currency: z.string().length(3).default('PHP'),
+  currency: z.string().length(3).optional(),
   glAccountId: idSchema.nullish(),
-  openingBalance: decimalSchema.default('0'),
+  openingBalance: decimalSchema.optional(),
 });
 export const updateBankAccountSchema = createBankAccountSchema.partial().extend({ active: z.boolean().optional() });

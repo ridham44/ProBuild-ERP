@@ -14,6 +14,7 @@ export type AuditEntry = {
   sourceType?: string;
   sourceId?: string;
   ip?: string;
+  userAgent?: string;
   requestId?: string;
 };
 
@@ -43,6 +44,7 @@ export class AuditService {
         sourceType: entry.sourceType ?? null,
         sourceId: entry.sourceId ?? null,
         ip: entry.ip ?? null,
+        userAgent: entry.userAgent?.slice(0, 250) ?? null,
         requestId: entry.requestId ?? null,
       },
     });

@@ -1,16 +1,18 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { randomUUID } from 'node:crypto';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { LoggerModule } from 'nestjs-pino';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter';
+import { IdempotencyInterceptor } from './common/idempotency/idempotency.interceptor';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { SessionAuthGuard } from './common/guards/session-auth.guard';
 import { ConfigModule } from './config/config.module';
 import { AppConfig } from './config/config.service';
 import { EnginesModule } from './engines/engines.module';
+import { AccountingModule } from './modules/accounting/accounting.module';
 import { AiModule } from './modules/ai/ai.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
@@ -50,12 +52,20 @@ import { PrismaModule } from './prisma/prisma.module';
         },
       }),
     }),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
+    ThrottlerModule.forRootAsync({
+      inject: [AppConfig],
+      // Rate limiting is only bypassed under NODE_ENV=test so suites can sign in many users from one IP.
+      useFactory: (config: AppConfig) => ({
+        throttlers: [{ ttl: 60_000, limit: 300 }],
+        skipIf: () => config.get('NODE_ENV') === 'test',
+      }),
+    }),
     ScheduleModule.forRoot(),
     PrismaModule,
     EnginesModule,
     AuthModule,
     SecurityModule,
+    AccountingModule,
     OrganizationModule,
     PartiesModule,
     ComplianceModule,
@@ -76,6 +86,7 @@ import { PrismaModule } from './prisma/prisma.module';
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_FILTER, useClass: ProblemDetailsFilter },
+    { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: SessionAuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },

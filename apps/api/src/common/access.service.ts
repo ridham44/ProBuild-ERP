@@ -49,6 +49,38 @@ export class AccessService {
     return scope === 'ALL' ? {} : { warehouseId: { in: scope } };
   }
 
+  /**
+   * True when the actor holds (module, action) over the whole of the target scope.
+   * A null actor dimension covers everything; a scoped actor dimension only covers the same id.
+   * A null target dimension means "everywhere", which a scoped actor can never cover.
+   */
+  holdsOver(user: SessionUser, module: string, action: PermissionActionKey, target: AccessScope = {}): boolean {
+    if (user.isSuperAdmin) return true;
+    const covers = (grant: string | null, wanted: string | null | undefined): boolean =>
+      grant === null || (wanted !== null && wanted !== undefined && grant === wanted);
+    return user.grants.some(
+      (g) =>
+        g.module === module &&
+        g.action === action &&
+        covers(g.projectId, target.projectId) &&
+        covers(g.warehouseId, target.warehouseId) &&
+        covers(g.branchId, target.branchId),
+    );
+  }
+
+  /** Prevents privilege escalation: you can only grant authority you hold over the same scope. */
+  assertCanGrant(
+    user: SessionUser,
+    permissions: Array<{ module: string; action: PermissionActionKey }>,
+    target: AccessScope = {},
+  ): void {
+    const missing = permissions.filter((p) => !this.holdsOver(user, p.module, p.action, target));
+    if (missing.length > 0) {
+      const sample = missing.slice(0, 3).map((p) => `${p.module}:${p.action}`).join(', ');
+      throw new ForbiddenException(`You cannot grant permissions you do not hold (${sample}${missing.length > 3 ? ', ...' : ''})`);
+    }
+  }
+
   // A grant with a null scope column covers every value; an unspecified record scope is not checked.
   private dimensionAllows(grantValue: string | null, recordValue: string | null | undefined): boolean {
     return grantValue === null || recordValue === undefined || recordValue === null || grantValue === recordValue;

@@ -1,5 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { AccessService } from '../common/access.service';
+import { ProjectAccessService } from '../common/project-access.service';
+import { ActivityService } from './activity/activity.service';
 import { ApprovalWorkflowsController, ApprovalsController } from './approvals/approvals.controller';
 import { ApprovalsService } from './approvals/approvals.service';
 import { AuditService } from './audit/audit.service';
@@ -16,6 +18,8 @@ import { StockLedgerService } from './stock-ledger/stock-ledger.service';
   controllers: [ApprovalsController, ApprovalWorkflowsController, NotificationsController],
   providers: [
     AccessService,
+    ProjectAccessService,
+    ActivityService,
     AuditService,
     NumberingService,
     StockLedgerService,
@@ -26,6 +30,8 @@ import { StockLedgerService } from './stock-ledger/stock-ledger.service';
   ],
   exports: [
     AccessService,
+    ProjectAccessService,
+    ActivityService,
     AuditService,
     NumberingService,
     StockLedgerService,

@@ -41,7 +41,9 @@ model Supplier {
   category            String?
   productCategories   String?
   accredited          Boolean              @default(false)
+  accreditationNo     String?
   accreditationExpiry DateTime?
+  notes               String?
   ewtCode             String?
   email               String?
   phone               String?
@@ -64,24 +66,25 @@ model Supplier {
 }
 
 model Subcontractor {
-  id             String          @id @default(uuid())
-  companyId      String
-  company        Company         @relation(fields: [companyId], references: [id])
-  code           String
-  name           String
-  tin            String?
-  pcabLicenseNo  String?
-  scope          String?
-  address        String?
-  bankInfo       String?
-  email          String?
-  phone          String?
-  active         Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  deletedAt      DateTime?
-  subcontracts   Subcontract[]
-  contactPersons ContactPerson[]
+  id                 String              @id @default(uuid())
+  companyId          String
+  company            Company             @relation(fields: [companyId], references: [id])
+  code               String
+  name               String
+  tin                String?
+  pcabLicenseNo      String?
+  scope              String?
+  address            String?
+  bankInfo           String?
+  email              String?
+  phone              String?
+  active             Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+  subcontracts       Subcontract[]
+  contactPersons     ContactPerson[]
+  projectCostLedgers ProjectCostLedger[]
 
   @@unique([companyId, code])
 }
@@ -100,6 +103,7 @@ model ContactPerson {
   position        String?
   email           String?
   phone           String?
+  isPrimary       Boolean        @default(false)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   deletedAt       DateTime?

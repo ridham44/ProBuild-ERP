@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ApprovalRequest, ApprovalStatus, Prisma } from '@prisma/client';
 import type { ApprovalDecisionInput, SessionUser, UpsertWorkflowInput } from '@probuild/shared';
+import { AccessService } from '../../common/access.service';
 import { BusinessRuleError, NotFoundError } from '../../common/errors/domain-errors';
 import { Db, PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -38,6 +39,7 @@ export class ApprovalsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
+    private readonly access: AccessService,
   ) {}
 
   registerHandler(documentType: string, handler: ApprovalHandler): void {
@@ -73,6 +75,7 @@ export class ApprovalsService {
         currentStep: 1,
         totalSteps: rule.steps.length,
         stepRoles: rule.steps.map((s) => s.roleName),
+        currentRole: rule.steps[0]?.roleName ?? null,
         requestedById: input.requestedById,
       },
     });
@@ -88,6 +91,8 @@ export class ApprovalsService {
     meta: { ip?: string; userAgent?: string },
   ): Promise<ApprovalRequest> {
     return this.prisma.$transaction(async (tx) => {
+      // Serialize concurrent decisions on the same request.
+      await tx.$queryRaw`SELECT id FROM "ApprovalRequest" WHERE id = ${requestId} FOR UPDATE`;
       const request = await tx.approvalRequest.findFirst({ where: { id: requestId, companyId: user.companyId } });
       if (!request) throw new NotFoundError('Approval request', requestId);
       if (request.status !== 'PENDING') throw new BusinessRuleError('This request has already been decided');
@@ -100,6 +105,9 @@ export class ApprovalsService {
       if (request.requestedById === user.id && !user.isSuperAdmin) {
         throw new ForbiddenException('You cannot approve your own request');
       }
+      this.access.assertCan(user, 'approvals.inbox', decision === 'APPROVED' ? 'APPROVE' : 'REJECT', { projectId: request.projectId });
+      const already = await tx.approvalAction.findFirst({ where: { requestId, approverId: user.id } });
+      if (already && !user.isSuperAdmin) throw new ForbiddenException('You have already acted on this request');
 
       await tx.approvalAction.create({
         data: {
@@ -118,7 +126,11 @@ export class ApprovalsService {
       const nextStatus: ApprovalStatus = decision === 'REJECTED' ? 'REJECTED' : isFinal ? 'APPROVED' : 'PENDING';
       const updated = await tx.approvalRequest.update({
         where: { id: requestId },
-        data: { status: nextStatus, currentStep: nextStatus === 'PENDING' ? request.currentStep + 1 : request.currentStep },
+        data: {
+          status: nextStatus,
+          currentStep: nextStatus === 'PENDING' ? request.currentStep + 1 : request.currentStep,
+          currentRole: nextStatus === 'PENDING' ? (roles[request.currentStep] ?? null) : null,
+        },
       });
 
       await this.audit.record(tx, {
@@ -152,7 +164,7 @@ export class ApprovalsService {
   async cancel(db: Db, companyId: string, documentType: string, documentId: string): Promise<void> {
     await db.approvalRequest.updateMany({
       where: { companyId, documentType, documentId, status: 'PENDING' },
-      data: { status: 'CANCELLED' },
+      data: { status: 'CANCELLED', currentRole: null },
     });
   }
 

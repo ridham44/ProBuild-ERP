@@ -55,6 +55,11 @@ model User {
   employeeId          String?
   active              Boolean              @default(true)
   lastLoginAt         DateTime?
+  failedLoginCount    Int                  @default(0)
+  lockedUntil         DateTime?
+  passwordChangedAt   DateTime?
+  mustChangePassword  Boolean              @default(false)
+  passwordResetTokens PasswordResetToken[]
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   deletedAt           DateTime?
@@ -116,16 +121,17 @@ model UserRoleAssignment {
 }
 
 model Session {
-  id        String    @id @default(uuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String    @unique
-  expiresAt DateTime
-  revokedAt DateTime?
-  ip        String?
-  userAgent String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  ip         String?
+  userAgent  String?
+  lastSeenAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([userId])
 }
@@ -144,6 +150,7 @@ model AuditLog {
   sourceType String?
   sourceId   String?
   ip         String?
+  userAgent  String?
   requestId  String?
   createdAt  DateTime @default(now())
 
@@ -203,6 +210,7 @@ model ApprovalRequest {
   amount        Decimal          @default(0) @db.Decimal(18, 2)
   status        ApprovalStatus   @default(PENDING)
   currentStep   Int              @default(1)
+  currentRole   String?
   totalSteps    Int              @default(1)
   stepRoles     Json
   requestedById String
@@ -211,6 +219,7 @@ model ApprovalRequest {
   updatedAt     DateTime         @updatedAt
   actions       ApprovalAction[]
 
+  @@index([companyId, status, currentRole])
   @@index([companyId, status])
   @@index([documentType, documentId])
   @@index([requestedById])
@@ -254,15 +263,38 @@ model Notification {
   @@index([companyId])
 }
 
+enum IdempotencyState {
+  IN_PROGRESS
+  COMPLETED
+}
+
+// One row per (user, key, route). IN_PROGRESS blocks concurrent duplicates; COMPLETED replays the stored response.
 model IdempotencyRecord {
-  id           String   @id @default(uuid())
+  id           String           @id @default(uuid())
   userId       String
   key          String
   route        String
-  statusCode   Int
+  requestHash  String
+  state        IdempotencyState @default(IN_PROGRESS)
+  statusCode   Int?
   responseBody Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  expiresAt    DateTime
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   @@unique([userId, key, route])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
 }

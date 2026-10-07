@@ -15,3 +15,4 @@ export * from './compliance';
 export * from './reports';
 export * from './portal';
 export * from './accounts';
+export * from './time';

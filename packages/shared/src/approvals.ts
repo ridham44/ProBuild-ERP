@@ -34,7 +34,8 @@ export type ApprovalDecisionInput = z.infer<typeof approvalDecisionSchema>;
 
 export const approvalRequestFilterSchema = z.object({
   status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED']).optional(),
-  mine: z.coerce.boolean().optional(),
+  /** Only requests waiting on one of my roles. Query strings arrive as text, so parse explicitly. */
+  mine: z.enum(['true', 'false']).transform((v) => v === 'true').optional(),
   documentType: z.enum(APPROVAL_DOCUMENT_TYPES).optional(),
   projectId: idSchema.optional(),
 });

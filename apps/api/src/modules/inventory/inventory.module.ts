@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { InventoryController } from './inventory.controller';
+import { ItemsService } from './items.service';
 
-// Feature module: add controllers/providers here following modules/organization as the reference.
-@Module({})
+/** Item master data now; stock documents (GRN, issue, transfer, count) are added by the inventory stages. */
+@Module({ controllers: [InventoryController], providers: [ItemsService], exports: [ItemsService] })
 export class InventoryModule {}

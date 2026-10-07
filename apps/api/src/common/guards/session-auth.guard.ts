@@ -1,7 +1,7 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthService, SESSION_COOKIE } from '../../modules/auth/auth.service';
-import { AuthedRequest, IS_PUBLIC } from '../decorators/auth.decorators';
+import { ALLOW_PASSWORD_CHANGE, AuthedRequest, IS_PUBLIC } from '../decorators/auth.decorators';
 
 @Injectable()
 export class SessionAuthGuard implements CanActivate {
@@ -18,9 +18,15 @@ export class SessionAuthGuard implements CanActivate {
     const token = (req.cookies as Record<string, string> | undefined)?.[SESSION_COOKIE];
     if (!token) throw new UnauthorizedException('Not signed in');
 
-    const user = await this.auth.resolveSession(token);
-    if (!user) throw new UnauthorizedException('Session expired');
-    req.user = user;
+    const resolved = await this.auth.resolveSession(token);
+    if (!resolved) throw new UnauthorizedException('Session expired');
+    req.user = resolved.user;
+    req.sessionId = resolved.sessionId;
+
+    if (resolved.user.mustChangePassword) {
+      const allowed = this.reflector.getAllAndOverride<boolean>(ALLOW_PASSWORD_CHANGE, [context.getHandler(), context.getClass()]);
+      if (!allowed) throw new ForbiddenException('You must change your password before continuing');
+    }
     return true;
   }
 }

@@ -18,6 +18,7 @@ function fakeDb() {
     item: { findFirst: async () => ({ id: 'i1', sku: 'CEM', trackBatch: false, trackSerial: false, restrictedProjectId: null, costingMethod: 'WEIGHTED_AVERAGE', standardCost: new D(0) }) },
     warehouse: { findFirst: async () => ({ id: 'w1' }) },
     $queryRaw: async () => [],
+    $executeRaw: async () => 0,
     stockBalance: {
       findUnique: async ({ where }: { where: { warehouseId_itemId_batchNo_stockStatus: Parameters<typeof keyOf>[0] } }) =>
         balances.get(keyOf(where.warehouseId_itemId_batchNo_stockStatus)) ?? null,

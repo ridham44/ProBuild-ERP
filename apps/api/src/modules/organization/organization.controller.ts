@@ -8,6 +8,7 @@ import {
   createLocationSchema,
   createWarehouseSchema,
   paginationQuerySchema,
+  warehouseStockQuerySchema,
   updateBankAccountSchema,
   updateBranchSchema,
   updateCompanySchema,
@@ -35,6 +36,7 @@ class UpdateWarehouseDto extends createZodDto(updateWarehouseSchema) {}
 class CreateLocationDto extends createZodDto(createLocationSchema) {}
 class CreateBankAccountDto extends createZodDto(createBankAccountSchema) {}
 class UpdateBankAccountDto extends createZodDto(updateBankAccountSchema) {}
+class WarehouseStockQueryDto extends createZodDto(warehouseStockQuerySchema) {}
 class LocationQueryDto extends createZodDto(z.object({ warehouseId: z.string().uuid() })) {}
 
 @ApiTags('organization')
@@ -136,6 +138,34 @@ export class OrganizationController {
   @RequirePermission('organization.warehouse', 'VIEW')
   listWarehouses(@CurrentUser() user: SessionUser, @Query() query: PageQueryDto) {
     return this.org.listWarehouses(user, query, this.access.warehouseScope(user, 'organization.warehouse', 'VIEW'));
+  }
+
+  @Get('warehouses/:id')
+  @RequirePermission('organization.warehouse', 'VIEW')
+  getWarehouse(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
+    this.access.assertCan(user, 'organization.warehouse', 'VIEW', { warehouseId: id });
+    return this.org.getWarehouse(user, id);
+  }
+
+  @Get('warehouses/:id/summary')
+  @RequirePermission('organization.warehouse', 'VIEW')
+  warehouseSummary(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
+    this.access.assertCan(user, 'organization.warehouse', 'VIEW', { warehouseId: id });
+    return this.org.warehouseSummary(user, id);
+  }
+
+  @Get('warehouses/:id/stock')
+  @RequirePermission('inventory.stock', 'VIEW')
+  warehouseStock(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Query() query: WarehouseStockQueryDto) {
+    this.access.assertCan(user, 'inventory.stock', 'VIEW', { warehouseId: id });
+    return this.org.warehouseStock(user, id, query);
+  }
+
+  @Get('warehouses/:id/activity')
+  @RequirePermission('organization.warehouse', 'VIEW')
+  warehouseActivity(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
+    this.access.assertCan(user, 'organization.warehouse', 'VIEW', { warehouseId: id });
+    return this.org.warehouseActivity(user, id);
   }
 
   @Post('warehouses')

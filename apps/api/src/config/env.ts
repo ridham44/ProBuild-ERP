@@ -10,9 +10,10 @@ const envSchema = z.object({
     .transform((v) => v.split(',').map((s) => s.trim()).filter(Boolean)),
   SESSION_TTL_HOURS: z.coerce.number().int().min(1).default(12),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+  ENABLE_API_DOCS: z.enum(['true','false']).default('false').transform((v) => v === 'true'),
   SENTRY_DSN: z.string().optional(),
-  ANTHROPIC_API_KEY: z.string().optional(),
-  ANTHROPIC_MODEL: z.string().default('claude-sonnet-5-5'),
+  OPENROUTER_API_KEY: z.string().optional(),
+  OPENROUTER_CHAT_MODEL: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

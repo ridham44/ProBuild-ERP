@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { manilaParts } from '@probuild/shared';
 import { Db } from '../../prisma/prisma.service';
 
 /** Document type -> number prefix. Add new types here; format is PREFIX-YYYY-00001. */
@@ -34,7 +35,7 @@ export class NumberingService {
   /** Returns the next number for the document type; atomic via the sequence row lock. */
   async next(db: Db, companyId: string, docType: string, date: Date = new Date()): Promise<string> {
     const prefix = DOC_PREFIXES[docType] ?? docType.slice(0, 4).toUpperCase();
-    const year = date.getUTCFullYear();
+    const { year } = manilaParts(date);
     const key = { companyId_docType_year: { companyId, docType, year } };
 
     const seq = await db.documentSequence.upsert({

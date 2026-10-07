@@ -42,3 +42,57 @@ export const dimensionsSchema = z.object({
   costCodeId: idSchema.optional(),
   boqItemId: idSchema.optional(),
 });
+
+export const nonNegativeDecimalSchema = decimalSchema.refine((v) => Number(v) >= 0, 'Must be 0 or greater');
+
+/** Quantities carry at most 4 decimal places (matches Decimal(18,4) columns). */
+export const quantitySchema = decimalSchema
+  .refine((v) => /^\d+(\.\d{1,4})?$/.test(v), 'Quantity must be positive with at most 4 decimal places')
+  .refine((v) => Number(v) > 0, 'Must be greater than 0');
+
+/** Unit prices/costs carry at most 4 decimal places and may be zero. */
+export const unitPriceSchema = decimalSchema.refine(
+  (v) => /^\d+(\.\d{1,4})?$/.test(v),
+  'Must be 0 or greater with at most 4 decimal places',
+);
+
+/** Whole-currency amounts carry at most 2 decimal places. */
+export const moneySchema = decimalSchema.refine(
+  (v) => /^\d+(\.\d{1,2})?$/.test(v),
+  'Must be 0 or greater with at most 2 decimal places',
+);
+
+/** Percentages 0-100 with up to 4 decimal places. */
+export const percentSchema = decimalSchema.refine(
+  (v) => /^\d+(\.\d{1,4})?$/.test(v) && Number(v) <= 100,
+  'Must be a percentage between 0 and 100',
+);
+
+/** Query-string booleans arrive as text. */
+export const queryBooleanSchema = z.enum(['true', 'false']).transform((v) => v === 'true');
+
+/** `field:asc` or `field:desc`; each list endpoint whitelists the fields it accepts. */
+export const sortSchema = z.string().regex(/^[A-Za-z]+:(asc|desc)$/, 'Use field:asc or field:desc');
+
+export const listQuerySchema = paginationQuerySchema.extend({ sort: sortSchema.optional() });
+export type ListQuery = z.infer<typeof listQuerySchema>;
+
+/** A reason is mandatory for destructive workflow actions (cancel, close, reject). */
+export const reasonSchema = z.object({ reason: z.string().trim().min(3).max(500) });
+export type ReasonInput = z.infer<typeof reasonSchema>;
+
+export const PRIORITIES = ['LOW', 'NORMAL', 'HIGH', 'URGENT'] as const;
+export const prioritySchema = z.enum(PRIORITIES);
+
+/** One row of a document's activity timeline (audit trail + approval actions). */
+export const activityItemSchema = z.object({
+  id: z.string(),
+  at: z.string(),
+  kind: z.enum(['AUDIT', 'APPROVAL']),
+  action: z.string(),
+  actor: z.object({ id: z.string(), name: z.string() }).nullable(),
+  summary: z.string(),
+  reason: z.string().nullable(),
+  details: z.record(z.string(), z.unknown()).nullable(),
+});
+export type ActivityItem = z.infer<typeof activityItemSchema>;

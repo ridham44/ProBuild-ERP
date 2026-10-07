@@ -1,7 +1,9 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Put, Query } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
 import { paginationQuerySchema, approvalDecisionSchema, approvalRequestFilterSchema, upsertWorkflowSchema, type SessionUser } from '@probuild/shared';
 import { createZodDto } from 'nestjs-zod';
+import { AccessService } from '../../common/access.service';
 import { ClientMeta, CurrentUser, RequirePermission } from '../../common/decorators/auth.decorators';
 import { paginate } from '../../common/pagination';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -17,18 +19,22 @@ export class ApprovalsController {
   constructor(
     private readonly approvals: ApprovalsService,
     private readonly prisma: PrismaService,
+    private readonly access: AccessService,
   ) {}
 
   @Get()
   @RequirePermission('approvals.inbox', 'VIEW')
-  async list(@CurrentUser() user: SessionUser, @Query() query: ApprovalListQueryDto) {
-    const where = {
+  list(@CurrentUser() user: SessionUser, @Query() query: ApprovalListQueryDto) {
+    const projectScope = this.access.projectScope(user, 'approvals.inbox', 'VIEW');
+    const where: Prisma.ApprovalRequestWhereInput = {
       companyId: user.companyId,
       ...(query.status ? { status: query.status } : {}),
       ...(query.documentType ? { documentType: query.documentType } : {}),
       ...(query.projectId ? { projectId: query.projectId } : {}),
+      ...(projectScope === 'ALL' ? {} : { OR: [{ projectId: null }, { projectId: { in: projectScope } }] }),
+      ...(query.mine ? { status: 'PENDING', currentRole: { in: user.isSuperAdmin ? undefined : user.roles } } : {}),
     };
-    const page = await paginate(
+    return paginate(
       (args) =>
         this.prisma.approvalRequest.findMany({
           where,
@@ -38,11 +44,6 @@ export class ApprovalsController {
         }),
       query,
     );
-    if (!query.mine) return page;
-    const mine = page.items.filter(
-      (r) => r.status === 'PENDING' && (user.isSuperAdmin || user.roles.includes((r.stepRoles as string[])[r.currentStep - 1] ?? '')),
-    );
-    return { items: mine, nextCursor: page.nextCursor };
   }
 
   @Post(':id/approve')

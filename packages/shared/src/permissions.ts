@@ -96,7 +96,6 @@ type RoleGrant = { modules: string[]; actions: PermissionActionKey[] | 'ALL' };
 const READ: PermissionActionKey[] = ['VIEW', 'EXPORT', 'PRINT'];
 const WRITE: PermissionActionKey[] = ['VIEW', 'CREATE', 'EDIT', 'SUBMIT', 'EXPORT', 'PRINT'];
 const OPERATE: PermissionActionKey[] = [...WRITE, 'POST', 'CANCEL', 'TRANSFER', 'ADJUST'];
-const APPROVER: PermissionActionKey[] = ['VIEW', 'APPROVE', 'REJECT'];
 
 /** A pattern ending in ".*" matches every module in that domain. "*" matches everything. */
 export const DEFAULT_ROLES: Record<string, RoleGrant[]> = {
@@ -115,10 +114,12 @@ export const DEFAULT_ROLES: Record<string, RoleGrant[]> = {
   'Project Manager': [
     { modules: ['projects.*', 'field.*', 'subcontract.*', 'inventory.request', 'inventory.issue', 'inventory.mrp'], actions: [...OPERATE, 'APPROVE', 'REJECT', 'CLOSE'] },
     { modules: ['procurement.requisition', 'procurement.order'], actions: [...WRITE, 'APPROVE', 'REJECT'] },
-    { modules: ['reports.view', 'documents.document', 'approvals.inbox', 'ai.assistant', 'parties.*', 'inventory.stock', 'inventory.item', 'finance.billing'], actions: [...WRITE, 'APPROVE'] },
+    { modules: ['procurement.requisition'], actions: ['CANCEL', 'CLOSE'] },
+    { modules: ['reports.view', 'documents.document', 'approvals.inbox', 'ai.assistant', 'parties.*', 'inventory.stock', 'inventory.item', 'finance.billing'], actions: [...WRITE, 'APPROVE', 'REJECT'] },
   ],
   'Project Engineer': [
     { modules: ['projects.*', 'field.*', 'inventory.request', 'procurement.requisition'], actions: WRITE },
+    { modules: ['procurement.requisition'], actions: ['CANCEL'] },
     { modules: ['inventory.stock', 'inventory.item', 'reports.view', 'documents.document'], actions: WRITE },
     { modules: ['approvals.inbox'], actions: ['VIEW'] },
   ],
@@ -133,6 +134,7 @@ export const DEFAULT_ROLES: Record<string, RoleGrant[]> = {
   ],
   Procurement: [
     { modules: ['procurement.*', 'parties.supplier'], actions: [...OPERATE, 'CLOSE'] },
+    { modules: ['procurement.rfq'], actions: ['APPROVE'] },
     { modules: ['inventory.item', 'inventory.stock', 'inventory.mrp', 'projects.project', 'projects.boq', 'reports.view'], actions: READ },
     { modules: ['approvals.inbox'], actions: 'ALL' },
   ],

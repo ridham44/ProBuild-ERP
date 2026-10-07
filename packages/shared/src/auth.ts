@@ -1,6 +1,24 @@
 import { z } from 'zod';
 import { PERMISSION_ACTIONS } from './permissions';
 
+/** Minimum standard for every password the system accepts. */
+export const passwordSchema = z
+  .string()
+  .min(12, 'Use at least 12 characters')
+  .max(128)
+  .regex(/[A-Za-z]/, 'Include at least one letter')
+  .regex(/[0-9]/, 'Include at least one number');
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: passwordSchema,
+});
+
+export const confirmPasswordResetSchema = z.object({
+  token: z.string().min(20).max(200),
+  newPassword: passwordSchema,
+});
+
 export const loginSchema = z.object({
   email: z.string().email().toLowerCase(),
   password: z.string().min(1),
@@ -24,6 +42,7 @@ export const sessionUserSchema = z.object({
   companyId: z.string(),
   userType: z.enum(['INTERNAL', 'CLIENT', 'SUPPLIER', 'SUBCONTRACTOR', 'EMPLOYEE']),
   isSuperAdmin: z.boolean(),
+  mustChangePassword: z.boolean(),
   roles: z.array(z.string()),
   grants: z.array(grantSchema),
 });
@@ -32,7 +51,7 @@ export type SessionUser = z.infer<typeof sessionUserSchema>;
 export const createUserSchema = z.object({
   email: z.string().email().toLowerCase(),
   name: z.string().min(1).max(120),
-  password: z.string().min(10).max(128),
+  password: passwordSchema,
   userType: z.enum(['INTERNAL', 'CLIENT', 'SUPPLIER', 'SUBCONTRACTOR', 'EMPLOYEE']).default('INTERNAL'),
   customerId: z.string().uuid().optional(),
   supplierId: z.string().uuid().optional(),

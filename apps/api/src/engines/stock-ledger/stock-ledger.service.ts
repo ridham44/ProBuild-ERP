@@ -208,7 +208,11 @@ export class StockLedgerService {
     });
     if (!warehouse) throw new BusinessRuleError('Warehouse does not exist or is inactive');
 
-    // Row lock serializes concurrent postings for the same stock bucket.
+    // Make sure the balance row exists, then lock it. Creating-if-missing first means two concurrent
+    // first postings for the same bucket queue on the unique key instead of racing on insert.
+    await db.$executeRaw`INSERT INTO "StockBalance" ("id", "companyId", "warehouseId", "itemId", "batchNo", "stockStatus", "qtyOnHand", "value", "avgCost", "updatedAt")
+      VALUES (gen_random_uuid()::text, ${m.companyId}, ${m.warehouseId}, ${m.itemId}, ${batchNo}, ${status}::"StockStatus", 0, 0, 0, now())
+      ON CONFLICT ("warehouseId", "itemId", "batchNo", "stockStatus") DO NOTHING`;
     await db.$queryRaw`SELECT id FROM "StockBalance"
       WHERE "warehouseId" = ${m.warehouseId} AND "itemId" = ${m.itemId} AND "batchNo" = ${batchNo}
         AND "stockStatus"::text = ${status} FOR UPDATE`;

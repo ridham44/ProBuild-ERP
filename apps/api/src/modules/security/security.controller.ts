@@ -3,7 +3,8 @@ import { ApiTags } from '@nestjs/swagger';
 import { PERMISSION_ACTIONS, assignRoleSchema, createUserSchema, type SessionUser } from '@probuild/shared';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { CurrentUser, RequirePermission } from '../../common/decorators/auth.decorators';
+import { ClientMeta, CurrentUser, RequirePermission } from '../../common/decorators/auth.decorators';
+import { AuthService, ClientMetaInfo } from '../auth/auth.service';
 import { SecurityService } from './security.service';
 
 class CreateUserDto extends createZodDto(createUserSchema) {}
@@ -18,7 +19,10 @@ class SetPermissionsDto extends createZodDto(
 @ApiTags('security')
 @Controller()
 export class SecurityController {
-  constructor(private readonly security: SecurityService) {}
+  constructor(
+    private readonly security: SecurityService,
+    private readonly auth: AuthService,
+  ) {}
 
   @Get('users')
   @RequirePermission('security.user', 'VIEW')
@@ -36,6 +40,13 @@ export class SecurityController {
   @RequirePermission('security.user', 'EDIT')
   setActive(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: SetActiveDto) {
     return this.security.setActive(user, id, body.active);
+  }
+
+  /** Issues a one-time reset token the admin hands to the user; the user completes it at /auth/password-reset/confirm. */
+  @Post('users/:id/password-reset')
+  @RequirePermission('security.user', 'EDIT')
+  issueReset(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @ClientMeta() meta: ClientMetaInfo) {
+    return this.auth.issuePasswordReset(user, id, meta);
   }
 
   @Post('users/:id/roles')

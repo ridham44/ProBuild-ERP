@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type {
   PaginationQuery,
+  WarehouseStockQuery,
   SessionUser,
   UpdateCompanyInput,
 } from '@probuild/shared';
@@ -20,6 +21,7 @@ import type {
 } from '@probuild/shared';
 import { BusinessRuleError, NotFoundError } from '../../common/errors/domain-errors';
 import { paginate } from '../../common/pagination';
+import { ActivityService } from '../../engines/activity/activity.service';
 import { AuditService } from '../../engines/audit/audit.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -34,6 +36,7 @@ export class OrganizationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly activity: ActivityService,
   ) {}
 
   // ---- Company ----------------------------------------------------------------------------
@@ -209,6 +212,80 @@ export class OrganizationService {
       orderBy: { fullPath: 'asc' },
       take: 500,
     });
+  }
+
+  // ---- Warehouse detail ---------------------------------------------------------------------
+
+  async getWarehouse(user: SessionUser, id: string) {
+    const warehouse = await this.prisma.warehouse.findFirst({
+      where: { id, companyId: user.companyId, deletedAt: null },
+      include: {
+        branch: { select: { id: true, code: true, name: true } },
+        project: { select: { id: true, code: true, name: true } },
+        parentWarehouse: { select: { id: true, code: true, name: true } },
+      },
+    });
+    if (!warehouse) throw new NotFoundError('Warehouse', id);
+    return warehouse;
+  }
+
+  /** Location and stock totals derived from live StockBalance rows; nothing here is stored or estimated. */
+  async warehouseSummary(user: SessionUser, id: string) {
+    await this.getWarehouse(user, id);
+    const [levels, balances, distinct] = await Promise.all([
+      this.prisma.warehouseLocation.groupBy({
+        by: ['level'],
+        where: { companyId: user.companyId, warehouseId: id, deletedAt: null, active: true },
+        _count: { _all: true },
+      }),
+      this.prisma.stockBalance.groupBy({
+        by: ['stockStatus'],
+        where: { companyId: user.companyId, warehouseId: id },
+        _sum: { qtyOnHand: true, value: true },
+      }),
+      this.prisma.stockBalance.findMany({
+        where: { companyId: user.companyId, warehouseId: id, qtyOnHand: { not: 0 } },
+        distinct: ['itemId'],
+        select: { itemId: true },
+      }),
+    ]);
+    const money = (v: { toFixed: (dp: number) => string } | null | undefined, dp: number) => (v ? v.toFixed(dp) : (0).toFixed(dp));
+    return {
+      warehouseId: id,
+      locations: {
+        total: levels.reduce((n, l) => n + l._count._all, 0),
+        byLevel: levels.map((l) => ({ level: l.level, count: l._count._all })),
+      },
+      stock: {
+        distinctItems: distinct.length,
+        byStatus: balances.map((b) => ({ stockStatus: b.stockStatus, qtyOnHand: money(b._sum.qtyOnHand, 4), value: money(b._sum.value, 2) })),
+      },
+    };
+  }
+
+  async warehouseStock(user: SessionUser, id: string, query: WarehouseStockQuery) {
+    await this.getWarehouse(user, id);
+    return paginate(
+      (args) =>
+        this.prisma.stockBalance.findMany({
+          where: {
+            companyId: user.companyId,
+            warehouseId: id,
+            ...(query.stockStatus ? { stockStatus: query.stockStatus } : {}),
+            ...(query.categoryId ? { item: { categoryId: query.categoryId } } : {}),
+            ...(query.search ? { item: { OR: [{ sku: { contains: query.search, mode: 'insensitive' } }, { name: { contains: query.search, mode: 'insensitive' } }] } } : {}),
+          },
+          orderBy: [{ item: { sku: 'asc' } }, { id: 'asc' }],
+          include: { item: { select: { id: true, sku: true, name: true, baseUnit: true } } },
+          ...args,
+        }),
+      query,
+    );
+  }
+
+  async warehouseActivity(user: SessionUser, id: string) {
+    await this.getWarehouse(user, id);
+    return this.activity.forDocument({ companyId: user.companyId, entityType: 'Warehouse', entityId: id });
   }
 
   // ---- Bank accounts ----------------------------------------------------------------------

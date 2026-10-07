@@ -71,6 +71,21 @@ model UnitOfMeasure {
   @@unique([companyId, code])
 }
 
+// Alternate units for an item. factor = how many base units one of this unit holds (1 box = 12 pcs -> 12).
+model ItemUnitConversion {
+  id        String   @id @default(uuid())
+  companyId String
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  unit      String
+  factor    Decimal  @db.Decimal(18, 6)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([itemId, unit])
+  @@index([companyId])
+}
+
 model ItemCategory {
   id        String         @id @default(uuid())
   companyId String
@@ -144,6 +159,8 @@ model Item {
   purchaseOrderLines       PurchaseOrderLine[]
   goodsReceiptLines        GoodsReceiptLine[]
   rateAnalysisLines        RateAnalysisLine[]
+  projectCostLedgers       ProjectCostLedger[]
+  unitConversions          ItemUnitConversion[]
 
   @@unique([companyId, sku])
   @@index([companyId, barcode])

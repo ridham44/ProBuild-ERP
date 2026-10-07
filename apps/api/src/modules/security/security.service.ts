@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PermissionAction, Prisma } from '@prisma/client';
 import { MODULES, type AssignRoleInput, type CreateUserInput, type SessionUser } from '@probuild/shared';
 import * as argon2 from 'argon2';
+import { AccessService } from '../../common/access.service';
 import { BusinessRuleError, ConflictError, NotFoundError } from '../../common/errors/domain-errors';
 import { AuditService } from '../../engines/audit/audit.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -32,6 +33,7 @@ export class SecurityService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly access: AccessService,
   ) {}
 
   listUsers(user: SessionUser, search?: string) {
@@ -51,8 +53,12 @@ export class SecurityService {
     const exists = await this.prisma.user.findUnique({ where: { email: input.email } });
     if (exists) throw new ConflictError('A user with this email already exists');
 
-    const roles = await this.prisma.role.findMany({ where: { id: { in: input.roleIds }, companyId: actor.companyId } });
+    const roles = await this.prisma.role.findMany({
+      where: { id: { in: input.roleIds }, companyId: actor.companyId },
+      include: { permissions: true },
+    });
     if (roles.length !== input.roleIds.length) throw new BusinessRuleError('One or more roles do not exist');
+    this.assertRolesGrantable(actor, roles);
 
     const passwordHash = await argon2.hash(input.password);
     return this.prisma.$transaction(async (tx) => {
@@ -62,6 +68,8 @@ export class SecurityService {
           email: input.email,
           name: input.name,
           passwordHash,
+          mustChangePassword: true,
+          passwordChangedAt: null,
           userType: input.userType,
           customerId: input.customerId,
           supplierId: input.supplierId,
@@ -106,10 +114,11 @@ export class SecurityService {
   async assignRole(actor: SessionUser, userId: string, input: AssignRoleInput) {
     const [target, role] = await Promise.all([
       this.prisma.user.findFirst({ where: { id: userId, companyId: actor.companyId, deletedAt: null } }),
-      this.prisma.role.findFirst({ where: { id: input.roleId, companyId: actor.companyId } }),
+      this.prisma.role.findFirst({ where: { id: input.roleId, companyId: actor.companyId }, include: { permissions: true } }),
     ]);
     if (!target) throw new NotFoundError('User', userId);
     if (!role) throw new NotFoundError('Role', input.roleId);
+    this.assertRolesGrantable(actor, [role], { projectId: input.projectId, warehouseId: input.warehouseId, branchId: input.branchId });
 
     return this.prisma.$transaction(async (tx) => {
       const assignment = await tx.userRoleAssignment.create({
@@ -158,6 +167,10 @@ export class SecurityService {
   async setRolePermissions(actor: SessionUser, roleId: string, permissions: Array<{ module: string; action: PermissionAction }>) {
     const role = await this.prisma.role.findFirst({ where: { id: roleId, companyId: actor.companyId }, include: { permissions: true } });
     if (!role) throw new NotFoundError('Role', roleId);
+    if (role.isSystem && !actor.isSuperAdmin && ['Super Admin', 'Company Admin'].includes(role.name)) {
+      throw new ForbiddenException('Only a super administrator can change the administrator roles');
+    }
+    this.access.assertCanGrant(actor, permissions);
     const known = new Set<string>(MODULES);
     const unknown = permissions.find((p) => !known.has(p.module));
     if (unknown) throw new BusinessRuleError(`Unknown module ${unknown.module}`);
@@ -176,6 +189,20 @@ export class SecurityService {
       });
     });
     return this.listRoles(actor).then((roles) => roles.find((r) => r.id === roleId));
+  }
+
+  /** A role may only be handed out by someone who holds every permission in it over the target scope. */
+  private assertRolesGrantable(
+    actor: SessionUser,
+    roles: Array<{ name: string; isSystem: boolean; permissions: Array<{ module: string; action: PermissionAction }> }>,
+    scope: { projectId?: string | null; warehouseId?: string | null; branchId?: string | null } = {},
+  ): void {
+    for (const role of roles) {
+      if (!actor.isSuperAdmin && role.isSystem && ['Super Admin', 'Company Admin'].includes(role.name)) {
+        throw new ForbiddenException('Only a super administrator can assign the administrator roles');
+      }
+      this.access.assertCanGrant(actor, role.permissions, scope);
+    }
   }
 
   async createRole(actor: SessionUser, name: string, description?: string) {

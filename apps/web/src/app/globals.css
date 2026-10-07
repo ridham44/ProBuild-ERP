@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * ProBuild design tokens. Ink-slate base, one safety-orange accent used for primary actions,
+ * focus and the active navigation marker. Colours are HSL channels so Tailwind can apply alpha.
+ */
+@layer base {
+  :root {
+    --background: 210 20% 97%;
+    --foreground: 217 33% 12%;
+    --surface: 0 0% 100%;
+    --surface-muted: 210 20% 95%;
+    --surface-raised: 0 0% 100%;
+    --border: 214 18% 87%;
+    --border-strong: 214 16% 76%;
+    --input: 214 14% 68%;
+    --muted-foreground: 215 14% 36%;
+    --subtle-foreground: 215 10% 46%;
+    --ring: 17 88% 45%;
+    --shadow: 217 40% 10%;
+
+    --primary: 17 88% 40%;
+    --primary-hover: 17 90% 33%;
+    --primary-foreground: 0 0% 100%;
+    --primary-subtle: 24 100% 95%;
+    --primary-border: 22 90% 78%;
+
+    --success: 152 55% 24%;
+    --success-subtle: 145 45% 94%;
+    --success-border: 145 30% 76%;
+    --warning: 36 90% 26%;
+    --warning-subtle: 44 95% 91%;
+    --warning-border: 40 70% 68%;
+    --danger: 0 65% 40%;
+    --danger-subtle: 0 85% 96%;
+    --danger-border: 0 60% 82%;
+    --info: 210 70% 34%;
+    --info-subtle: 210 80% 95%;
+    --info-border: 210 55% 78%;
+    --pending: 245 40% 40%;
+    --pending-subtle: 245 70% 96%;
+    --pending-border: 245 40% 82%;
+    --approved: 168 70% 22%;
+    --approved-subtle: 165 50% 93%;
+    --approved-border: 165 35% 72%;
+    --rejected: 350 62% 38%;
+    --rejected-subtle: 350 80% 96%;
+    --rejected-border: 350 50% 82%;
+    --overdue: 12 85% 32%;
+    --overdue-subtle: 14 95% 94%;
+    --overdue-border: 14 70% 74%;
+
+    --sidebar: 217 30% 11%;
+    --sidebar-foreground: 214 22% 80%;
+    --sidebar-muted: 215 14% 56%;
+    --sidebar-active: 217 28% 18%;
+    --sidebar-border: 217 25% 19%;
+    --sidebar-accent: 22 95% 58%;
+  }
+
+  :root[data-theme='dark'] {
+    --background: 217 28% 8%;
+    --foreground: 210 20% 92%;
+    --surface: 217 26% 11%;
+    --surface-muted: 217 24% 14%;
+    --surface-raised: 217 24% 13%;
+    --border: 217 20% 20%;
+    --border-strong: 217 16% 30%;
+    --input: 217 14% 36%;
+    --muted-foreground: 214 16% 70%;
+    --subtle-foreground: 214 12% 58%;
+    --ring: 22 92% 56%;
+    --shadow: 0 0% 0%;
+
+    --primary: 20 90% 52%;
+    --primary-hover: 20 92% 58%;
+    --primary-foreground: 217 30% 8%;
+    --primary-subtle: 20 40% 16%;
+    --primary-border: 20 50% 32%;
+
+    --success: 145 50% 62%;
+    --success-subtle: 150 30% 14%;
+    --success-border: 150 30% 28%;
+    --warning: 42 90% 62%;
+    --warning-subtle: 42 40% 14%;
+    --warning-border: 42 45% 30%;
+    --danger: 0 85% 72%;
+    --danger-subtle: 0 35% 15%;
+    --danger-border: 0 35% 32%;
+    --info: 210 85% 72%;
+    --info-subtle: 210 40% 15%;
+    --info-border: 210 40% 32%;
+    --pending: 245 85% 80%;
+    --pending-subtle: 245 30% 17%;
+    --pending-border: 245 30% 34%;
+    --approved: 165 55% 62%;
+    --approved-subtle: 165 30% 14%;
+    --approved-border: 165 30% 28%;
+    --rejected: 350 85% 74%;
+    --rejected-subtle: 350 32% 16%;
+    --rejected-border: 350 32% 32%;
+    --overdue: 14 90% 70%;
+    --overdue-subtle: 14 40% 16%;
+    --overdue-border: 14 40% 32%;
+
+    --sidebar: 217 32% 6%;
+    --sidebar-active: 217 26% 13%;
+    --sidebar-border: 217 22% 14%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background font-sans text-base text-foreground antialiased;
+    font-feature-settings: 'tnum' 0;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-1 ring-offset-background;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.22);
+  }
+}
+
+@layer components {
+  /* Financial and quantity figures: tabular, right aligned where they sit in tables. */
+  .num {
+    @apply tabular-nums;
+    font-variant-numeric: tabular-nums slashed-zero;
+    font-feature-settings: 'tnum' 1, 'zero' 1;
+  }
+
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border-strong)) transparent;
+  }
+}

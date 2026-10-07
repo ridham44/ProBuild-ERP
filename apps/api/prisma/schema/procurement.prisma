@@ -8,12 +8,14 @@ enum PrStatus {
   PARTIALLY_ORDERED
   ORDERED
   CANCELLED
+  CLOSED
 }
 
 enum PoStatus {
   DRAFT
   PENDING_APPROVAL
   APPROVED
+  REJECTED
   SENT
   PARTIALLY_RECEIVED
   RECEIVED
@@ -27,6 +29,20 @@ enum RfqStatus {
   QUOTED
   AWARDED
   CLOSED
+  CANCELLED
+}
+
+enum RfqInviteStatus {
+  INVITED
+  SENT
+  QUOTED
+  DECLINED
+}
+
+enum QuotationStatus {
+  SUBMITTED
+  AWARDED
+  NOT_AWARDED
 }
 
 enum QcResult {
@@ -64,6 +80,15 @@ model PurchaseRequisition {
   requiredDate   DateTime?
   status         PrStatus                  @default(DRAFT)
   remarks        String?
+  purpose        String?
+  estimatedTotal Decimal                   @default(0) @db.Decimal(18, 2)
+  submittedAt    DateTime?
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+  cancelledAt    DateTime?
+  cancelReason   String?
+  closedAt       DateTime?
+  closeReason    String?
   createdAt      DateTime                  @default(now())
   updatedAt      DateTime                  @updatedAt
   deletedAt      DateTime?
@@ -80,8 +105,13 @@ model PurchaseRequisitionLine {
   id                String              @id @default(uuid())
   requisitionId     String
   requisition       PurchaseRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  lineNo            Int                 @default(0)
   itemId            String
   item              Item                @relation(fields: [itemId], references: [id])
+  description       String?
+  justification     String?
+  warehouseId       String?
+  warehouse         Warehouse?          @relation(fields: [warehouseId], references: [id])
   wbsNodeId         String?
   wbsNode           WbsNode?            @relation(fields: [wbsNodeId], references: [id])
   costCodeId        String?
@@ -95,33 +125,46 @@ model PurchaseRequisitionLine {
   requiredDate      DateTime?
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+  rfqLines          RfqLine[]
+  orderLines        PurchaseOrderLine[]
 
   @@index([requisitionId])
   @@index([itemId])
+  @@index([warehouseId])
   @@index([wbsNodeId])
   @@index([costCodeId])
   @@index([boqItemId])
 }
 
 model Rfq {
-  id                 String               @id @default(uuid())
-  companyId          String
-  company            Company              @relation(fields: [companyId], references: [id])
-  number             String
-  requisitionId      String?
-  requisition        PurchaseRequisition? @relation(fields: [requisitionId], references: [id])
-  projectId          String
-  project            Project              @relation(fields: [projectId], references: [id])
-  dueDate            DateTime?
-  status             RfqStatus            @default(DRAFT)
-  awardedQuotationId String?
-  remarks            String?
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-  deletedAt          DateTime?
-  lines              RfqLine[]
-  suppliers          RfqSupplier[]
-  quotations         SupplierQuotation[]
+  id                   String               @id @default(uuid())
+  companyId            String
+  company              Company              @relation(fields: [companyId], references: [id])
+  number               String
+  requisitionId        String?
+  requisition          PurchaseRequisition? @relation(fields: [requisitionId], references: [id])
+  projectId            String
+  project              Project              @relation(fields: [projectId], references: [id])
+  dueDate              DateTime?
+  status               RfqStatus            @default(DRAFT)
+  awardedQuotationId   String?
+  remarks              String?
+  deliveryRequirements String?
+  deliveryLocation     String?
+  requiredDate         DateTime?
+  createdById          String?
+  sentAt               DateTime?
+  awardedAt            DateTime?
+  closedAt             DateTime?
+  cancelledAt          DateTime?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  deletedAt            DateTime?
+  lines                RfqLine[]
+  suppliers            RfqSupplier[]
+  quotations           SupplierQuotation[]
+  award                RfqAward?
+  purchaseOrders       PurchaseOrder[]
 
   @@unique([companyId, number])
   @@index([requisitionId])
@@ -129,54 +172,71 @@ model Rfq {
 }
 
 model RfqLine {
-  id        String   @id @default(uuid())
-  rfqId     String
-  rfq       Rfq      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
-  itemId    String
-  item      Item     @relation(fields: [itemId], references: [id])
-  qty       Decimal  @db.Decimal(18, 4)
-  unit      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String                   @id @default(uuid())
+  rfqId             String
+  rfq               Rfq                      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  requisitionLineId String?
+  requisitionLine   PurchaseRequisitionLine? @relation(fields: [requisitionLineId], references: [id])
+  lineNo            Int                      @default(0)
+  itemId            String
+  item              Item                     @relation(fields: [itemId], references: [id])
+  description       String?
+  qty               Decimal                  @db.Decimal(18, 4)
+  unit              String
+  requiredDate      DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  quotationLines    SupplierQuotationLine[]
 
+  @@unique([rfqId, requisitionLineId])
   @@index([rfqId])
   @@index([itemId])
+  @@index([requisitionLineId])
 }
 
 model RfqSupplier {
-  id         String    @id @default(uuid())
-  rfqId      String
-  rfq        Rfq       @relation(fields: [rfqId], references: [id], onDelete: Cascade)
-  supplierId String
-  supplier   Supplier  @relation(fields: [supplierId], references: [id])
-  sentAt     DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id          String          @id @default(uuid())
+  rfqId       String
+  rfq         Rfq             @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  supplierId  String
+  supplier    Supplier        @relation(fields: [supplierId], references: [id])
+  status      RfqInviteStatus @default(INVITED)
+  sentAt      DateTime?
+  respondedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   @@unique([rfqId, supplierId])
   @@index([supplierId])
 }
 
 model SupplierQuotation {
-  id           String                  @id @default(uuid())
-  companyId    String
-  company      Company                 @relation(fields: [companyId], references: [id])
-  rfqId        String
-  rfq          Rfq                     @relation(fields: [rfqId], references: [id])
-  supplierId   String
-  supplier     Supplier                @relation(fields: [supplierId], references: [id])
-  quoteNo      String?
-  quoteDate    DateTime
-  validUntil   DateTime?
-  deliveryDays Int?
-  paymentTerms String?
-  warranty     String?
-  freight      Decimal                 @default(0) @db.Decimal(18, 2)
-  taxAmount    Decimal                 @default(0) @db.Decimal(18, 2)
-  totalAmount  Decimal                 @default(0) @db.Decimal(18, 2)
-  createdAt    DateTime                @default(now())
-  updatedAt    DateTime                @updatedAt
-  lines        SupplierQuotationLine[]
+  id             String                  @id @default(uuid())
+  companyId      String
+  company        Company                 @relation(fields: [companyId], references: [id])
+  rfqId          String
+  rfq            Rfq                     @relation(fields: [rfqId], references: [id])
+  supplierId     String
+  supplier       Supplier                @relation(fields: [supplierId], references: [id])
+  quoteNo        String?
+  quoteDate      DateTime
+  validUntil     DateTime?
+  deliveryDays   Int?
+  paymentTerms   String?
+  warranty       String?
+  currency       String                  @default("PHP")
+  status         QuotationStatus         @default(SUBMITTED)
+  subtotal       Decimal                 @default(0) @db.Decimal(18, 2)
+  discountAmount Decimal                 @default(0) @db.Decimal(18, 2)
+  freight        Decimal                 @default(0) @db.Decimal(18, 2)
+  taxAmount      Decimal                 @default(0) @db.Decimal(18, 2)
+  totalAmount    Decimal                 @default(0) @db.Decimal(18, 2)
+  createdById    String?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  lines          SupplierQuotationLine[]
+  award          RfqAward?
+  purchaseOrders PurchaseOrder[]
 
   @@unique([rfqId, supplierId])
   @@index([companyId])
@@ -184,20 +244,52 @@ model SupplierQuotation {
 }
 
 model SupplierQuotationLine {
-  id            String            @id @default(uuid())
-  quotationId   String
-  quotation     SupplierQuotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
-  itemId        String
-  item          Item              @relation(fields: [itemId], references: [id])
-  qty           Decimal           @db.Decimal(18, 4)
-  unitPrice     Decimal           @db.Decimal(18, 4)
-  brand         String?
-  specification String?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id                 String              @id @default(uuid())
+  quotationId        String
+  quotation          SupplierQuotation   @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  rfqLineId          String
+  rfqLine            RfqLine             @relation(fields: [rfqLineId], references: [id])
+  itemId             String
+  item               Item                @relation(fields: [itemId], references: [id])
+  qty                Decimal             @db.Decimal(18, 4)
+  unitPrice          Decimal             @db.Decimal(18, 4)
+  discountPct        Decimal             @default(0) @db.Decimal(7, 4)
+  discountAmount     Decimal             @default(0) @db.Decimal(18, 2)
+  taxPct             Decimal             @default(0) @db.Decimal(7, 4)
+  taxAmount          Decimal             @default(0) @db.Decimal(18, 2)
+  lineTotal          Decimal             @default(0) @db.Decimal(18, 2)
+  deliveryDate       DateTime?
+  brand              String?
+  specification      String?
+  remarks            String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  purchaseOrderLines PurchaseOrderLine[]
 
+  @@unique([quotationId, rfqLineId])
   @@index([quotationId])
   @@index([itemId])
+  @@index([rfqLineId])
+}
+
+// Records the decision to buy from one supplier quotation; one award per RFQ.
+model RfqAward {
+  id          String            @id @default(uuid())
+  companyId   String
+  rfqId       String            @unique
+  rfq         Rfq               @relation(fields: [rfqId], references: [id])
+  quotationId String            @unique
+  quotation   SupplierQuotation @relation(fields: [quotationId], references: [id])
+  supplierId  String
+  awardedById String
+  awardedAt   DateTime          @default(now())
+  reason      String?
+  totalAmount Decimal           @db.Decimal(18, 2)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([companyId])
+  @@index([supplierId])
 }
 
 model PurchaseOrder {
@@ -214,6 +306,17 @@ model PurchaseOrder {
   requisitionId    String?
   requisition      PurchaseRequisition? @relation(fields: [requisitionId], references: [id])
   quotationId      String?
+  quotation        SupplierQuotation?   @relation(fields: [quotationId], references: [id])
+  rfqId            String?
+  rfq              Rfq?                 @relation(fields: [rfqId], references: [id])
+  currency         String               @default("PHP")
+  submittedAt      DateTime?
+  approvedAt       DateTime?
+  rejectedAt       DateTime?
+  sentAt           DateTime?
+  cancelledAt      DateTime?
+  cancelReason     String?
+  closedAt         DateTime?
   orderDate        DateTime
   expectedDate     DateTime?
   deliveryLocation String?
@@ -238,34 +341,47 @@ model PurchaseOrder {
   @@index([projectId])
   @@index([warehouseId])
   @@index([requisitionId])
+  @@index([quotationId])
+  @@index([rfqId])
 }
 
 model PurchaseOrderLine {
-  id                String             @id @default(uuid())
+  id                String                   @id @default(uuid())
   orderId           String
-  order             PurchaseOrder      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order             PurchaseOrder            @relation(fields: [orderId], references: [id], onDelete: Cascade)
   itemId            String
-  item              Item               @relation(fields: [itemId], references: [id])
+  item              Item                     @relation(fields: [itemId], references: [id])
   wbsNodeId         String?
-  wbsNode           WbsNode?           @relation(fields: [wbsNodeId], references: [id])
+  wbsNode           WbsNode?                 @relation(fields: [wbsNodeId], references: [id])
   costCodeId        String?
-  costCode          CostCode?          @relation(fields: [costCodeId], references: [id])
+  costCode          CostCode?                @relation(fields: [costCodeId], references: [id])
   boqItemId         String?
-  boqItem           BoqItem?           @relation(fields: [boqItemId], references: [id])
+  boqItem           BoqItem?                 @relation(fields: [boqItemId], references: [id])
   requisitionLineId String?
-  qty               Decimal            @db.Decimal(18, 4)
-  receivedQty       Decimal            @default(0) @db.Decimal(18, 4)
-  invoicedQty       Decimal            @default(0) @db.Decimal(18, 4)
+  requisitionLine   PurchaseRequisitionLine? @relation(fields: [requisitionLineId], references: [id])
+  quotationLineId   String?
+  quotationLine     SupplierQuotationLine?   @relation(fields: [quotationLineId], references: [id])
+  lineNo            Int                      @default(0)
+  description       String?
+  deliveryDate      DateTime?
+  qty               Decimal                  @db.Decimal(18, 4)
+  cancelledQty      Decimal                  @default(0) @db.Decimal(18, 4)
+  receivedQty       Decimal                  @default(0) @db.Decimal(18, 4)
+  invoicedQty       Decimal                  @default(0) @db.Decimal(18, 4)
   unit              String
-  unitPrice         Decimal            @db.Decimal(18, 4)
-  taxPct            Decimal            @default(0) @db.Decimal(7, 4)
-  discountPct       Decimal            @default(0) @db.Decimal(7, 4)
-  lineTotal         Decimal            @db.Decimal(18, 2)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  unitPrice         Decimal                  @db.Decimal(18, 4)
+  taxPct            Decimal                  @default(0) @db.Decimal(7, 4)
+  discountPct       Decimal                  @default(0) @db.Decimal(7, 4)
+  discountAmount    Decimal                  @default(0) @db.Decimal(18, 2)
+  taxAmount         Decimal                  @default(0) @db.Decimal(18, 2)
+  lineTotal         Decimal                  @db.Decimal(18, 2)
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
   goodsReceiptLines GoodsReceiptLine[]
 
   @@index([orderId])
+  @@index([requisitionLineId])
+  @@index([quotationLineId])
   @@index([itemId])
   @@index([wbsNodeId])
   @@index([costCodeId])

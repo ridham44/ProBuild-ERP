@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JournalEntry, PartyType, Prisma } from '@prisma/client';
-import type { AccountCode } from '@probuild/shared';
+import { manilaMonthRange, manilaParts, type AccountCode } from '@probuild/shared';
 import { BusinessRuleError, NotFoundError } from '../../common/errors/domain-errors';
 import { Db } from '../../prisma/prisma.service';
 import { NumberingService } from '../numbering/numbering.service';
@@ -83,16 +83,7 @@ export class JournalService {
       throw new BusinessRuleError(`Entry is out of balance: debits ${totalDebit.toString()} vs credits ${totalCredit.toString()}`);
     }
 
-    const period = await db.accountingPeriod.findUnique({
-      where: {
-        companyId_year_month: {
-          companyId: input.companyId,
-          year: input.entryDate.getUTCFullYear(),
-          month: input.entryDate.getUTCMonth() + 1,
-        },
-      },
-    });
-    if (period?.closed) throw new BusinessRuleError('The accounting period for this date is closed');
+    const period = await this.openPeriodFor(db, input.companyId, input.entryDate);
 
     const entryNo = await this.numbering.next(db, input.companyId, 'JOURNAL', input.entryDate);
     return db.journalEntry.create({
@@ -100,7 +91,7 @@ export class JournalService {
         companyId: input.companyId,
         entryNo,
         entryDate: input.entryDate,
-        periodId: period?.id ?? null,
+        periodId: period.id,
         description: input.description,
         status: 'POSTED',
         sourceType: input.sourceType ?? null,
@@ -109,6 +100,19 @@ export class JournalService {
         lines: { create: lineData },
       },
     });
+  }
+
+  /** Finds the Manila-calendar period for a date, creating it open if missing, and rejects closed periods. */
+  async openPeriodFor(db: Db, companyId: string, date: Date) {
+    const { year, month } = manilaParts(date);
+    const { start, endExclusive } = manilaMonthRange(year, month);
+    const period = await db.accountingPeriod.upsert({
+      where: { companyId_year_month: { companyId, year, month } },
+      create: { companyId, year, month, startDate: start, endDate: new Date(endExclusive.getTime() - 1) },
+      update: {},
+    });
+    if (period.closed) throw new BusinessRuleError(`Accounting period ${year}-${String(month).padStart(2, '0')} is closed`);
+    return period;
   }
 
   /** Posts a mirror entry with debits/credits swapped and marks the original as reversed. */

@@ -1,11 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import {
+  passwordSchema,
   DEFAULT_CHART_OF_ACCOUNTS,
   DEFAULT_ROLES,
   DEFAULT_TAX_CODES,
   expandRolePermissions,
 } from '@probuild/shared';
 import * as argon2 from 'argon2';
+import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
@@ -54,18 +56,30 @@ async function main(): Promise<void> {
     });
   }
 
-  const password = process.env.SEED_ADMIN_PASSWORD ?? 'ChangeMe!12345';
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@probuild.local' },
-    update: {},
-    create: {
-      companyId: company.id,
-      email: 'admin@probuild.local',
-      name: 'System Admin',
-      passwordHash: await argon2.hash(password),
-      isSuperAdmin: true,
-    },
-  });
+  // No published default credentials: production must supply a password, development gets a random one.
+  const supplied = process.env.SEED_ADMIN_PASSWORD;
+  if (process.env.NODE_ENV === 'production' && !supplied) {
+    throw new Error('SEED_ADMIN_PASSWORD is required when NODE_ENV=production');
+  }
+  if (supplied) {
+    const check = passwordSchema.safeParse(supplied);
+    if (!check.success) throw new Error(`SEED_ADMIN_PASSWORD rejected: ${check.error.issues[0]?.message ?? 'invalid'}`);
+  }
+  const password = supplied ?? randomBytes(12).toString('base64url') + '9';
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@probuild.local';
+  const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
+  const admin =
+    existingAdmin ??
+    (await prisma.user.create({
+      data: {
+        companyId: company.id,
+        email: adminEmail,
+        name: 'System Admin',
+        passwordHash: await argon2.hash(password),
+        isSuperAdmin: true,
+        mustChangePassword: true,
+      },
+    }));
   const adminRoleId = roleIds.get('Company Admin');
   if (adminRoleId && !(await prisma.userRoleAssignment.findFirst({ where: { userId: admin.id, roleId: adminRoleId } }))) {
     await prisma.userRoleAssignment.create({ data: { userId: admin.id, roleId: adminRoleId } });
@@ -88,7 +102,26 @@ async function main(): Promise<void> {
     },
   });
 
-  console.log('Seeded. Login: admin@probuild.local /', password === 'ChangeMe!12345' ? 'ChangeMe!12345 (change it)' : '[SEED_ADMIN_PASSWORD]');
+  await prisma.approvalWorkflow.upsert({
+    where: { companyId_documentType: { companyId: company.id, documentType: 'PURCHASE_ORDER' } },
+    update: {},
+    create: {
+      companyId: company.id,
+      documentType: 'PURCHASE_ORDER',
+      name: 'Purchase Order',
+      rules: {
+        create: [
+          { minAmount: 0, maxAmount: 100000, steps: { create: [{ stepOrder: 1, roleName: 'Procurement' }] } },
+          { minAmount: 100000.01, maxAmount: 500000, steps: { create: [{ stepOrder: 1, roleName: 'Procurement' }, { stepOrder: 2, roleName: 'Finance' }] } },
+          { minAmount: 500000.01, steps: { create: [{ stepOrder: 1, roleName: 'Procurement' }, { stepOrder: 2, roleName: 'Finance' }, { stepOrder: 3, roleName: 'Company Admin' }] } },
+        ],
+      },
+    },
+  });
+
+  if (existingAdmin) console.log(`Seeded. Admin ${adminEmail} already existed; password unchanged.`);
+  else if (supplied) console.log(`Seeded. Admin ${adminEmail} created with the password from SEED_ADMIN_PASSWORD (change required at first login).`);
+  else console.log(`Seeded. Admin ${adminEmail} generated one-time password: ${password}  (change required at first login; shown once)`);
 }
 
 main()
