@@ -1,0 +1,268 @@
+// Users, roles, scoped permissions, sessions, approvals, audit, notifications.
+
+enum UserType {
+  INTERNAL
+  CLIENT
+  SUPPLIER
+  SUBCONTRACTOR
+  EMPLOYEE
+}
+
+enum PermissionAction {
+  VIEW
+  CREATE
+  EDIT
+  DELETE
+  SUBMIT
+  APPROVE
+  REJECT
+  CANCEL
+  POST
+  EXPORT
+  PRINT
+  OVERRIDE
+  ADJUST
+  TRANSFER
+  CLOSE
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+model User {
+  id                  String               @id @default(uuid())
+  companyId           String
+  company             Company              @relation(fields: [companyId], references: [id])
+  email               String               @unique
+  name                String
+  passwordHash        String
+  userType            UserType             @default(INTERNAL)
+  isSuperAdmin        Boolean              @default(false)
+  customerId          String?
+  supplierId          String?
+  subcontractorId     String?
+  employeeId          String?
+  active              Boolean              @default(true)
+  lastLoginAt         DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?
+  managedProjects     Project[]            @relation("ProjectManager")
+  approvalRequests    ApprovalRequest[]    @relation("ApprovalRequester")
+  approvalActions     ApprovalAction[]     @relation("ApprovalApprover")
+  projectMembers      ProjectMember[]
+  userRoleAssignments UserRoleAssignment[]
+  sessions            Session[]
+  notifications       Notification[]
+
+  @@index([companyId])
+}
+
+model Role {
+  id                  String               @id @default(uuid())
+  companyId           String
+  company             Company              @relation(fields: [companyId], references: [id])
+  name                String
+  description         String?
+  isSystem            Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  permissions         RolePermission[]
+  userRoleAssignments UserRoleAssignment[]
+
+  @@unique([companyId, name])
+}
+
+// Role -> Module -> Action. `module` is a key from packages/shared permissions.
+model RolePermission {
+  id        String           @id @default(uuid())
+  roleId    String
+  role      Role             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  module    String
+  action    PermissionAction
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([roleId, module, action])
+}
+
+// A user holds a role within a scope. A null scope column means "all" for that dimension.
+model UserRoleAssignment {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId      String
+  role        Role     @relation(fields: [roleId], references: [id])
+  companyId   String?
+  branchId    String?
+  projectId   String?
+  warehouseId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([roleId])
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  ip        String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+// Append-only. Application code never updates or deletes rows.
+model AuditLog {
+  id         String   @id @default(uuid())
+  companyId  String?
+  userId     String?
+  entityType String
+  entityId   String
+  action     String
+  before     Json?
+  after      Json?
+  reason     String?
+  sourceType String?
+  sourceId   String?
+  ip         String?
+  requestId  String?
+  createdAt  DateTime @default(now())
+
+  @@index([companyId, entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ApprovalWorkflow {
+  id           String         @id @default(uuid())
+  companyId    String
+  company      Company        @relation(fields: [companyId], references: [id])
+  documentType String
+  name         String
+  active       Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  rules        ApprovalRule[]
+
+  @@unique([companyId, documentType])
+}
+
+// Amount band -> ordered approver steps. e.g. 0-50,000: PM; 250,001+: PM, Finance, Director
+model ApprovalRule {
+  id         String             @id @default(uuid())
+  workflowId String
+  workflow   ApprovalWorkflow   @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  minAmount  Decimal            @default(0) @db.Decimal(18, 2)
+  maxAmount  Decimal?           @db.Decimal(18, 2)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  steps      ApprovalRuleStep[]
+
+  @@index([workflowId])
+}
+
+model ApprovalRuleStep {
+  id        String       @id @default(uuid())
+  ruleId    String
+  rule      ApprovalRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  stepOrder Int
+  roleName  String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([ruleId, stepOrder])
+}
+
+model ApprovalRequest {
+  id            String           @id @default(uuid())
+  companyId     String
+  company       Company          @relation(fields: [companyId], references: [id])
+  documentType  String
+  documentId    String
+  documentNo    String?
+  projectId     String?
+  amount        Decimal          @default(0) @db.Decimal(18, 2)
+  status        ApprovalStatus   @default(PENDING)
+  currentStep   Int              @default(1)
+  totalSteps    Int              @default(1)
+  stepRoles     Json
+  requestedById String
+  requestedBy   User             @relation("ApprovalRequester", fields: [requestedById], references: [id])
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  actions       ApprovalAction[]
+
+  @@index([companyId, status])
+  @@index([documentType, documentId])
+  @@index([requestedById])
+}
+
+model ApprovalAction {
+  id         String          @id @default(uuid())
+  requestId  String
+  request    ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  stepOrder  Int
+  approverId String
+  approver   User            @relation("ApprovalApprover", fields: [approverId], references: [id])
+  decision   ApprovalStatus
+  comment    String?
+  ip         String?
+  device     String?
+  signature  String?
+  createdAt  DateTime        @default(now())
+
+  @@index([requestId])
+  @@index([approverId])
+}
+
+model Notification {
+  id         String              @id @default(uuid())
+  companyId  String
+  company    Company             @relation(fields: [companyId], references: [id])
+  userId     String
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel    NotificationChannel @default(IN_APP)
+  type       String
+  title      String
+  body       String?
+  entityType String?
+  entityId   String?
+  readAt     DateTime?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@index([userId, readAt])
+  @@index([companyId])
+}
+
+model IdempotencyRecord {
+  id           String   @id @default(uuid())
+  userId       String
+  key          String
+  route        String
+  statusCode   Int
+  responseBody Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, key, route])
+}

@@ -1,0 +1,672 @@
+// Workforce, attendance, payroll, equipment/fleet/fuel, fixed assets, field reports, HSE, subcontracting.
+
+enum EmployeeStatus {
+  ACTIVE
+  ON_LEAVE
+  RESIGNED
+  TERMINATED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  HOLIDAY
+  REST_DAY
+  ON_LEAVE
+}
+
+enum PayrollStatus {
+  DRAFT
+  APPROVED
+  POSTED
+  CANCELLED
+}
+
+enum EquipmentKind {
+  HEAVY_EQUIPMENT
+  VEHICLE
+  MACHINERY
+  GENERATOR
+  TESTING_EQUIPMENT
+  OTHER
+}
+
+enum OwnershipType {
+  OWNED
+  RENTED
+  LEASED
+  SUBCONTRACTOR
+}
+
+enum FuelTxnType {
+  PURCHASE
+  ISSUE
+}
+
+enum HseRecordType {
+  INDUCTION
+  TOOLBOX_MEETING
+  INSPECTION
+  INCIDENT
+  ACCIDENT
+  NEAR_MISS
+  OBSERVATION
+  PERMIT_TO_WORK
+  CORRECTIVE_ACTION
+}
+
+model Employee {
+  id                     String                  @id @default(uuid())
+  companyId              String
+  company                Company                 @relation(fields: [companyId], references: [id])
+  branchId               String?
+  branch                 Branch?                 @relation(fields: [branchId], references: [id])
+  departmentId           String?
+  department             Department?             @relation(fields: [departmentId], references: [id])
+  projectId              String?
+  project                Project?                @relation(fields: [projectId], references: [id])
+  code                   String
+  fullName               String
+  position               String?
+  trade                  String?
+  biometricCode          String?
+  status                 EmployeeStatus          @default(ACTIVE)
+  hireDate               DateTime?
+  dailyRate              Decimal                 @default(0) @db.Decimal(18, 2)
+  monthlyRate            Decimal                 @default(0) @db.Decimal(18, 2)
+  hourlyCostRate         Decimal                 @default(0) @db.Decimal(18, 4)
+  tin                    String?
+  sssNo                  String?
+  philhealthNo           String?
+  pagibigNo              String?
+  email                  String?
+  phone                  String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime?
+  projectCostLedgers     ProjectCostLedger[]
+  expenseClaims          ExpenseClaim[]
+  pettyCashFunds         PettyCashFund[]
+  serialUnits            SerialUnit[]
+  ppeIssues              PpeIssue[]
+  employeeCertifications EmployeeCertification[]
+  attendanceRecords      AttendanceRecord[]
+  leaveRequests          LeaveRequest[]
+  payslips               Payslip[]
+  employeeLoans          EmployeeLoan[]
+  equipment              Equipment[]
+
+  @@unique([companyId, code])
+  @@index([branchId])
+  @@index([departmentId])
+  @@index([projectId])
+}
+
+model EmployeeCertification {
+  id         String    @id @default(uuid())
+  companyId  String
+  company    Company   @relation(fields: [companyId], references: [id])
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  type       String
+  number     String?
+  issuedAt   DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([employeeId])
+}
+
+model Shift {
+  id           String   @id @default(uuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id])
+  name         String
+  startTime    String
+  endTime      String
+  breakMinutes Int      @default(60)
+  graceMinutes Int      @default(10)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([companyId, name])
+}
+
+model BiometricDevice {
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+  name      String
+  serialNo  String?
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([projectId])
+}
+
+model AttendanceImportBatch {
+  id           String             @id @default(uuid())
+  companyId    String
+  company      Company            @relation(fields: [companyId], references: [id])
+  source       String
+  fileName     String?
+  totalRows    Int
+  validRows    Int
+  errorRows    Int
+  importedById String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  logs         RawAttendanceLog[]
+
+  @@index([companyId])
+}
+
+model RawAttendanceLog {
+  id             String                @id @default(uuid())
+  batchId        String
+  batch          AttendanceImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  companyId      String
+  deviceId       String?
+  deviceUserCode String
+  punchAt        DateTime
+  employeeId     String?
+  issue          String?
+  createdAt      DateTime              @default(now())
+
+  @@index([companyId, punchAt])
+  @@index([employeeId, punchAt])
+  @@index([batchId])
+}
+
+// Validated and approved daily attendance. Feeds payroll and project labor cost.
+model AttendanceRecord {
+  id            String           @id @default(uuid())
+  companyId     String
+  company       Company          @relation(fields: [companyId], references: [id])
+  employeeId    String
+  employee      Employee         @relation(fields: [employeeId], references: [id])
+  projectId     String?
+  project       Project?         @relation(fields: [projectId], references: [id])
+  shiftId       String?
+  workDate      DateTime
+  timeIn        DateTime?
+  timeOut       DateTime?
+  regularHours  Decimal          @default(0) @db.Decimal(7, 2)
+  overtimeHours Decimal          @default(0) @db.Decimal(7, 2)
+  nightHours    Decimal          @default(0) @db.Decimal(7, 2)
+  lateMinutes   Int              @default(0)
+  status        AttendanceStatus @default(PRESENT)
+  isHoliday     Boolean          @default(false)
+  approved      Boolean          @default(false)
+  approvedById  String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@unique([employeeId, workDate])
+  @@index([companyId])
+  @@index([projectId])
+}
+
+model LeaveType {
+  id            String         @id @default(uuid())
+  companyId     String
+  company       Company        @relation(fields: [companyId], references: [id])
+  name          String
+  daysPerYear   Decimal        @default(0) @db.Decimal(7, 2)
+  paid          Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  leaveRequests LeaveRequest[]
+
+  @@unique([companyId, name])
+}
+
+model LeaveRequest {
+  id           String    @id @default(uuid())
+  companyId    String
+  company      Company   @relation(fields: [companyId], references: [id])
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id])
+  leaveTypeId  String
+  leaveType    LeaveType @relation(fields: [leaveTypeId], references: [id])
+  startDate    DateTime
+  endDate      DateTime
+  days         Decimal   @db.Decimal(7, 2)
+  reason       String?
+  status       DocStatus @default(SUBMITTED)
+  approvedById String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([leaveTypeId])
+}
+
+model PayrollRun {
+  id          String        @id @default(uuid())
+  companyId   String
+  company     Company       @relation(fields: [companyId], references: [id])
+  number      String
+  periodStart DateTime
+  periodEnd   DateTime
+  payDate     DateTime?
+  status      PayrollStatus @default(DRAFT)
+  totalGross  Decimal       @default(0) @db.Decimal(18, 2)
+  totalNet    Decimal       @default(0) @db.Decimal(18, 2)
+  postedAt    DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  payslips    Payslip[]
+
+  @@unique([companyId, number])
+}
+
+model Payslip {
+  id                     String                     @id @default(uuid())
+  runId                  String
+  run                    PayrollRun                 @relation(fields: [runId], references: [id], onDelete: Cascade)
+  employeeId             String
+  employee               Employee                   @relation(fields: [employeeId], references: [id])
+  basicPay               Decimal                    @default(0) @db.Decimal(18, 2)
+  overtimePay            Decimal                    @default(0) @db.Decimal(18, 2)
+  holidayPay             Decimal                    @default(0) @db.Decimal(18, 2)
+  nightDiffPay           Decimal                    @default(0) @db.Decimal(18, 2)
+  allowances             Decimal                    @default(0) @db.Decimal(18, 2)
+  grossPay               Decimal                    @default(0) @db.Decimal(18, 2)
+  sssContribution        Decimal                    @default(0) @db.Decimal(18, 2)
+  philhealthContribution Decimal                    @default(0) @db.Decimal(18, 2)
+  pagibigContribution    Decimal                    @default(0) @db.Decimal(18, 2)
+  withholdingTax         Decimal                    @default(0) @db.Decimal(18, 2)
+  loanDeductions         Decimal                    @default(0) @db.Decimal(18, 2)
+  otherDeductions        Decimal                    @default(0) @db.Decimal(18, 2)
+  netPay                 Decimal                    @default(0) @db.Decimal(18, 2)
+  createdAt              DateTime                   @default(now())
+  updatedAt              DateTime                   @updatedAt
+  allocations            PayslipProjectAllocation[]
+
+  @@unique([runId, employeeId])
+  @@index([employeeId])
+}
+
+// Payroll -> Project -> Cost Code: how an employee's gross pay splits across projects.
+model PayslipProjectAllocation {
+  id         String   @id @default(uuid())
+  payslipId  String
+  payslip    Payslip  @relation(fields: [payslipId], references: [id], onDelete: Cascade)
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id])
+  wbsNodeId  String?
+  costCodeId String?
+  hours      Decimal  @db.Decimal(9, 2)
+  amount     Decimal  @db.Decimal(18, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([payslipId])
+  @@index([projectId])
+}
+
+model EmployeeLoan {
+  id                 String   @id @default(uuid())
+  companyId          String
+  company            Company  @relation(fields: [companyId], references: [id])
+  employeeId         String
+  employee           Employee @relation(fields: [employeeId], references: [id])
+  type               String
+  principal          Decimal  @db.Decimal(18, 2)
+  balance            Decimal  @db.Decimal(18, 2)
+  deductionPerPeriod Decimal  @db.Decimal(18, 2)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([employeeId])
+}
+
+model Equipment {
+  id                   String                @id @default(uuid())
+  companyId            String
+  company              Company               @relation(fields: [companyId], references: [id])
+  code                 String
+  name                 String
+  kind                 EquipmentKind         @default(HEAVY_EQUIPMENT)
+  type                 String?
+  brand                String?
+  model                String?
+  serialNo             String?
+  plateNo              String?
+  ownership            OwnershipType         @default(OWNED)
+  purchaseDate         DateTime?
+  purchaseCost         Decimal               @default(0) @db.Decimal(18, 2)
+  currentValue         Decimal               @default(0) @db.Decimal(18, 2)
+  hourlyRate           Decimal               @default(0) @db.Decimal(18, 4)
+  currentProjectId     String?
+  currentProject       Project?              @relation(fields: [currentProjectId], references: [id])
+  operatorId           String?
+  operator             Employee?             @relation(fields: [operatorId], references: [id])
+  engineHours          Decimal               @default(0) @db.Decimal(12, 2)
+  odometer             Decimal               @default(0) @db.Decimal(12, 2)
+  registrationExpiry   DateTime?
+  insuranceExpiry      DateTime?
+  status               String                @default("AVAILABLE")
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  equipmentAllocations EquipmentAllocation[]
+  equipmentUsageLogs   EquipmentUsageLog[]
+  maintenanceRecords   MaintenanceRecord[]
+  fuelTransactions     FuelTransaction[]
+
+  @@unique([companyId, code])
+  @@index([currentProjectId])
+  @@index([operatorId])
+}
+
+// Inter-project allocation. Overlapping ranges for the same equipment are rejected.
+model EquipmentAllocation {
+  id          String    @id @default(uuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id])
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id])
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([equipmentId])
+  @@index([projectId])
+}
+
+model EquipmentUsageLog {
+  id             String    @id @default(uuid())
+  companyId      String
+  company        Company   @relation(fields: [companyId], references: [id])
+  equipmentId    String
+  equipment      Equipment @relation(fields: [equipmentId], references: [id])
+  projectId      String
+  project        Project   @relation(fields: [projectId], references: [id])
+  wbsNodeId      String?
+  costCodeId     String?
+  usageDate      DateTime
+  operatingHours Decimal   @default(0) @db.Decimal(9, 2)
+  idleHours      Decimal   @default(0) @db.Decimal(9, 2)
+  downtimeHours  Decimal   @default(0) @db.Decimal(9, 2)
+  operatorId     String?
+  costAmount     Decimal   @default(0) @db.Decimal(18, 2)
+  posted         Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([equipmentId])
+  @@index([projectId])
+}
+
+model MaintenanceRecord {
+  id           String    @id @default(uuid())
+  companyId    String
+  company      Company   @relation(fields: [companyId], references: [id])
+  equipmentId  String
+  equipment    Equipment @relation(fields: [equipmentId], references: [id])
+  type         String
+  description  String?
+  serviceDate  DateTime
+  cost         Decimal   @default(0) @db.Decimal(18, 2)
+  nextDueDate  DateTime?
+  nextDueHours Decimal?  @db.Decimal(12, 2)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([equipmentId])
+}
+
+model FuelTransaction {
+  id          String      @id @default(uuid())
+  companyId   String
+  company     Company     @relation(fields: [companyId], references: [id])
+  type        FuelTxnType
+  txnDate     DateTime
+  equipmentId String?
+  equipment   Equipment?  @relation(fields: [equipmentId], references: [id])
+  projectId   String?
+  project     Project?    @relation(fields: [projectId], references: [id])
+  driverId    String?
+  liters      Decimal     @db.Decimal(12, 2)
+  unitCost    Decimal     @db.Decimal(18, 4)
+  totalCost   Decimal     @db.Decimal(18, 2)
+  odometer    Decimal?    @db.Decimal(12, 2)
+  engineHours Decimal?    @db.Decimal(12, 2)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([companyId])
+  @@index([equipmentId])
+  @@index([projectId])
+}
+
+model FixedAsset {
+  id                      String              @id @default(uuid())
+  companyId               String
+  company                 Company             @relation(fields: [companyId], references: [id])
+  code                    String
+  name                    String
+  category                String
+  acquisitionDate         DateTime
+  acquisitionCost         Decimal             @db.Decimal(18, 2)
+  salvageValue            Decimal             @default(0) @db.Decimal(18, 2)
+  usefulLifeMonths        Int
+  accumulatedDepreciation Decimal             @default(0) @db.Decimal(18, 2)
+  location                String?
+  projectId               String?
+  project                 Project?            @relation(fields: [projectId], references: [id])
+  equipmentId             String?
+  status                  String              @default("ACTIVE")
+  disposedAt              DateTime?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  deletedAt               DateTime?
+  depreciation            DepreciationEntry[]
+
+  @@unique([companyId, code])
+  @@index([projectId])
+}
+
+model DepreciationEntry {
+  id             String     @id @default(uuid())
+  assetId        String
+  asset          FixedAsset @relation(fields: [assetId], references: [id])
+  periodYear     Int
+  periodMonth    Int
+  amount         Decimal    @db.Decimal(18, 2)
+  journalEntryId String?
+  createdAt      DateTime   @default(now())
+
+  @@unique([assetId, periodYear, periodMonth])
+}
+
+model DailySiteReport {
+  id                String          @id @default(uuid())
+  companyId         String
+  company           Company         @relation(fields: [companyId], references: [id])
+  projectId         String
+  project           Project         @relation(fields: [projectId], references: [id])
+  reportDate        DateTime
+  submittedById     String
+  weather           String?
+  manpower          Json?
+  equipment         Json?
+  materialsReceived Json?
+  materialsConsumed Json?
+  workCompleted     String?
+  issues            String?
+  delays            String?
+  visitors          String?
+  safetyIncidents   String?
+  latitude          Decimal?        @db.Decimal(9, 6)
+  longitude         Decimal?        @db.Decimal(9, 6)
+  remarks           String?
+  aiSummary         String?
+  status            DocStatus       @default(DRAFT)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?
+  progress          ProgressEntry[]
+
+  @@unique([projectId, reportDate, submittedById])
+  @@index([companyId])
+}
+
+// BOQ quantity completed on a date. Updates BoqItem.completedQty and WBS/project progress.
+model ProgressEntry {
+  id            String           @id @default(uuid())
+  companyId     String
+  company       Company          @relation(fields: [companyId], references: [id])
+  projectId     String
+  project       Project          @relation(fields: [projectId], references: [id])
+  boqItemId     String
+  boqItem       BoqItem          @relation(fields: [boqItemId], references: [id])
+  dailyReportId String?
+  dailyReport   DailySiteReport? @relation(fields: [dailyReportId], references: [id])
+  entryDate     DateTime
+  qtyCompleted  Decimal          @db.Decimal(18, 4)
+  laborHours    Decimal          @default(0) @db.Decimal(9, 2)
+  recordedById  String
+  remarks       String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([companyId])
+  @@index([projectId])
+  @@index([boqItemId])
+  @@index([dailyReportId])
+}
+
+model HseRecord {
+  id               String        @id @default(uuid())
+  companyId        String
+  company          Company       @relation(fields: [companyId], references: [id])
+  projectId        String
+  project          Project       @relation(fields: [projectId], references: [id])
+  type             HseRecordType
+  recordDate       DateTime
+  title            String
+  description      String?
+  severity         String?
+  employeeId       String?
+  correctiveAction String?
+  status           String        @default("OPEN")
+  reportedById     String
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  deletedAt        DateTime?
+
+  @@index([companyId])
+  @@index([projectId])
+}
+
+model Subcontract {
+  id               String             @id @default(uuid())
+  companyId        String
+  company          Company            @relation(fields: [companyId], references: [id])
+  projectId        String
+  project          Project            @relation(fields: [projectId], references: [id])
+  subcontractorId  String
+  subcontractor    Subcontractor      @relation(fields: [subcontractorId], references: [id])
+  number           String
+  scope            String
+  amount           Decimal            @default(0) @db.Decimal(18, 2)
+  retentionPct     Decimal            @default(10) @db.Decimal(7, 4)
+  advancePct       Decimal            @default(0) @db.Decimal(7, 4)
+  advancePaid      Decimal            @default(0) @db.Decimal(18, 2)
+  advanceRecovered Decimal            @default(0) @db.Decimal(18, 2)
+  withholdingPct   Decimal            @default(2) @db.Decimal(7, 4)
+  warrantyMonths   Int                @default(12)
+  penaltyTerms     String?
+  paymentTerms     String?
+  status           DocStatus          @default(DRAFT)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  deletedAt        DateTime?
+  items            SubcontractItem[]
+  claims           SubcontractClaim[]
+
+  @@unique([companyId, number])
+  @@index([projectId])
+  @@index([subcontractorId])
+}
+
+model SubcontractItem {
+  id            String      @id @default(uuid())
+  subcontractId String
+  subcontract   Subcontract @relation(fields: [subcontractId], references: [id], onDelete: Cascade)
+  boqItemId     String?
+  boqItem       BoqItem?    @relation(fields: [boqItemId], references: [id])
+  wbsNodeId     String?
+  costCodeId    String?
+  description   String
+  unit          String
+  quantity      Decimal     @db.Decimal(18, 4)
+  unitRate      Decimal     @db.Decimal(18, 4)
+  amount        Decimal     @db.Decimal(18, 2)
+  claimedQty    Decimal     @default(0) @db.Decimal(18, 4)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([subcontractId])
+  @@index([boqItemId])
+}
+
+model SubcontractClaim {
+  id              String                 @id @default(uuid())
+  companyId       String
+  company         Company                @relation(fields: [companyId], references: [id])
+  subcontractId   String
+  subcontract     Subcontract            @relation(fields: [subcontractId], references: [id])
+  number          String
+  periodEnd       DateTime
+  grossWork       Decimal                @default(0) @db.Decimal(18, 2)
+  retention       Decimal                @default(0) @db.Decimal(18, 2)
+  advanceRecovery Decimal                @default(0) @db.Decimal(18, 2)
+  withholdingTax  Decimal                @default(0) @db.Decimal(18, 2)
+  backCharges     Decimal                @default(0) @db.Decimal(18, 2)
+  deductions      Decimal                @default(0) @db.Decimal(18, 2)
+  vatAmount       Decimal                @default(0) @db.Decimal(18, 2)
+  netPayable      Decimal                @default(0) @db.Decimal(18, 2)
+  paidAmount      Decimal                @default(0) @db.Decimal(18, 2)
+  status          DocStatus              @default(DRAFT)
+  journalEntryId  String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  deletedAt       DateTime?
+  lines           SubcontractClaimLine[]
+
+  @@unique([companyId, number])
+  @@index([subcontractId])
+}
+
+model SubcontractClaimLine {
+  id            String           @id @default(uuid())
+  claimId       String
+  claim         SubcontractClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  itemId        String
+  qtyThisPeriod Decimal          @db.Decimal(18, 4)
+  amount        Decimal          @db.Decimal(18, 2)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([claimId])
+}

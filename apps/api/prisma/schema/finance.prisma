@@ -1,0 +1,550 @@
+// Project cost ledger, general ledger, tax, billing/AR, payments/AP, bank, expenses, compliance, documents.
+
+enum CostTxnType {
+  MATERIAL_ISSUE
+  MATERIAL_RETURN
+  PAYROLL
+  EQUIPMENT
+  FUEL
+  SUBCONTRACT
+  EXPENSE
+  SUPPLIER_INVOICE
+  PETTY_CASH
+  ADJUSTMENT
+  OTHER
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum JournalStatus {
+  DRAFT
+  POSTED
+  REVERSED
+}
+
+enum TaxKind {
+  VAT
+  PERCENTAGE_TAX
+  EXPANDED_WITHHOLDING
+  WITHHOLDING_VAT
+  EXEMPT
+  ZERO_RATED
+}
+
+enum BillingType {
+  PROGRESS
+  MILESTONE
+  PERCENTAGE
+  BOQ
+  VARIATION
+  DOWN_PAYMENT
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  BANK_TRANSFER
+  ONLINE
+}
+
+enum PartyType {
+  CUSTOMER
+  SUPPLIER
+  SUBCONTRACTOR
+  EMPLOYEE
+}
+
+enum ComplianceCategory {
+  PCAB
+  SEC
+  DTI
+  BIR
+  PHILGEPS
+  LGU
+  DOLE
+  INSURANCE
+  BOND
+  PROJECT_PERMIT
+  OTHER
+}
+
+// IMMUTABLE. Every cost transaction in the system lands here: Project -> WBS -> BOQ -> Cost Code.
+model ProjectCostLedger {
+  id              String              @id @default(uuid())
+  companyId       String
+  company         Company             @relation(fields: [companyId], references: [id])
+  branchId        String?
+  projectId       String
+  project         Project             @relation(fields: [projectId], references: [id])
+  wbsNodeId       String?
+  wbsNode         WbsNode?            @relation(fields: [wbsNodeId], references: [id])
+  boqItemId       String?
+  boqItem         BoqItem?            @relation(fields: [boqItemId], references: [id])
+  costCodeId      String?
+  costCode        CostCode?           @relation(fields: [costCodeId], references: [id])
+  departmentId    String?
+  costCategory    CostCategory
+  txnType         CostTxnType
+  txnDate         DateTime
+  supplierId      String?
+  supplier        Supplier?           @relation(fields: [supplierId], references: [id])
+  employeeId      String?
+  employee        Employee?           @relation(fields: [employeeId], references: [id])
+  subcontractorId String?
+  warehouseId     String?
+  itemId          String?
+  quantity        Decimal             @default(0) @db.Decimal(18, 4)
+  unitCost        Decimal             @default(0) @db.Decimal(18, 4)
+  totalCost       Decimal             @db.Decimal(18, 2)
+  taxAmount       Decimal             @default(0) @db.Decimal(18, 2)
+  sourceType      String
+  sourceId        String
+  reference       String?
+  reversalOfId    String?
+  reversalOf      ProjectCostLedger?  @relation("CostReversal", fields: [reversalOfId], references: [id])
+  reversedBy      ProjectCostLedger[] @relation("CostReversal")
+  userId          String
+  createdAt       DateTime            @default(now())
+
+  @@index([companyId, projectId, txnDate])
+  @@index([sourceType, sourceId])
+  @@index([projectId, costCodeId])
+  @@index([wbsNodeId])
+  @@index([boqItemId])
+  @@index([costCodeId])
+  @@index([supplierId])
+  @@index([employeeId])
+  @@index([reversalOfId])
+}
+
+model Account {
+  id           String        @id @default(uuid())
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id])
+  parentId     String?
+  parent       Account?      @relation("AccountTree", fields: [parentId], references: [id])
+  children     Account[]     @relation("AccountTree")
+  code         String
+  name         String
+  type         AccountType
+  isPostable   Boolean       @default(true)
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+  journalLines JournalLine[]
+  bankAccounts BankAccount[]
+
+  @@unique([companyId, code])
+  @@index([parentId])
+}
+
+model JournalEntry {
+  id           String         @id @default(uuid())
+  companyId    String
+  company      Company        @relation(fields: [companyId], references: [id])
+  entryNo      String
+  entryDate    DateTime
+  periodId     String?
+  description  String
+  status       JournalStatus  @default(POSTED)
+  sourceType   String?
+  sourceId     String?
+  reversalOfId String?
+  reversalOf   JournalEntry?  @relation("JournalReversal", fields: [reversalOfId], references: [id])
+  reversedBy   JournalEntry[] @relation("JournalReversal")
+  postedById   String
+  createdAt    DateTime       @default(now())
+  lines        JournalLine[]
+
+  @@unique([companyId, entryNo])
+  @@index([sourceType, sourceId])
+  @@index([reversalOfId])
+}
+
+model JournalLine {
+  id           String       @id @default(uuid())
+  entryId      String
+  entry        JournalEntry @relation(fields: [entryId], references: [id])
+  accountId    String
+  account      Account      @relation(fields: [accountId], references: [id])
+  debit        Decimal      @default(0) @db.Decimal(18, 2)
+  credit       Decimal      @default(0) @db.Decimal(18, 2)
+  memo         String?
+  branchId     String?
+  departmentId String?
+  costCenterId String?
+  projectId    String?
+  wbsNodeId    String?
+  costCodeId   String?
+  partyType    PartyType?
+  partyId      String?
+  createdAt    DateTime     @default(now())
+
+  @@index([projectId])
+  @@index([entryId])
+  @@index([accountId])
+}
+
+// Rates are versioned: a code has many effective-dated rate rows.
+model TaxCode {
+  id          String           @id @default(uuid())
+  companyId   String
+  company     Company          @relation(fields: [companyId], references: [id])
+  code        String
+  name        String
+  kind        TaxKind
+  glAccountId String?
+  active      Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  rates       TaxRateVersion[]
+
+  @@unique([companyId, code])
+}
+
+model TaxRateVersion {
+  id            String    @id @default(uuid())
+  taxCodeId     String
+  taxCode       TaxCode   @relation(fields: [taxCodeId], references: [id], onDelete: Cascade)
+  ratePct       Decimal   @db.Decimal(7, 4)
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  legalBasis    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([taxCodeId])
+}
+
+model TaxCertificate {
+  id          String    @id @default(uuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id])
+  formType    String
+  partyType   PartyType
+  partyId     String
+  periodEnd   DateTime
+  amount      Decimal   @db.Decimal(18, 2)
+  taxWithheld Decimal   @db.Decimal(18, 2)
+  referenceNo String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([companyId])
+}
+
+model ClientBilling {
+  id              String              @id @default(uuid())
+  companyId       String
+  company         Company             @relation(fields: [companyId], references: [id])
+  projectId       String
+  project         Project             @relation(fields: [projectId], references: [id])
+  customerId      String
+  customer        Customer            @relation(fields: [customerId], references: [id])
+  number          String
+  type            BillingType         @default(PROGRESS)
+  billingDate     DateTime
+  periodEnd       DateTime?
+  dueDate         DateTime?
+  grossAmount     Decimal             @default(0) @db.Decimal(18, 2)
+  retention       Decimal             @default(0) @db.Decimal(18, 2)
+  advanceRecovery Decimal             @default(0) @db.Decimal(18, 2)
+  backCharges     Decimal             @default(0) @db.Decimal(18, 2)
+  deductions      Decimal             @default(0) @db.Decimal(18, 2)
+  vatAmount       Decimal             @default(0) @db.Decimal(18, 2)
+  withholdingTax  Decimal             @default(0) @db.Decimal(18, 2)
+  netReceivable   Decimal             @default(0) @db.Decimal(18, 2)
+  collectedAmount Decimal             @default(0) @db.Decimal(18, 2)
+  invoiceNo       String?
+  status          DocStatus           @default(DRAFT)
+  journalEntryId  String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  deletedAt       DateTime?
+  lines           ClientBillingLine[]
+  collections     Collection[]
+
+  @@unique([companyId, number])
+  @@index([projectId])
+  @@index([customerId])
+}
+
+model ClientBillingLine {
+  id          String        @id @default(uuid())
+  billingId   String
+  billing     ClientBilling @relation(fields: [billingId], references: [id], onDelete: Cascade)
+  boqItemId   String?
+  boqItem     BoqItem?      @relation(fields: [boqItemId], references: [id])
+  description String
+  previousQty Decimal       @default(0) @db.Decimal(18, 4)
+  currentQty  Decimal       @default(0) @db.Decimal(18, 4)
+  unitRate    Decimal       @default(0) @db.Decimal(18, 4)
+  amount      Decimal       @db.Decimal(18, 2)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([billingId])
+  @@index([boqItemId])
+}
+
+model Collection {
+  id             String        @id @default(uuid())
+  companyId      String
+  company        Company       @relation(fields: [companyId], references: [id])
+  billingId      String
+  billing        ClientBilling @relation(fields: [billingId], references: [id])
+  number         String
+  collectionDate DateTime
+  amount         Decimal       @db.Decimal(18, 2)
+  method         PaymentMethod @default(BANK_TRANSFER)
+  bankAccountId  String?
+  bankAccount    BankAccount?  @relation(fields: [bankAccountId], references: [id])
+  reference      String?
+  journalEntryId String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([companyId, number])
+  @@index([billingId])
+  @@index([bankAccountId])
+}
+
+// Retention and advance tracked separately from billing totals.
+model RetentionEntry {
+  id         String   @id @default(uuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id])
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id])
+  direction  String
+  sourceType String
+  sourceId   String
+  amount     Decimal  @db.Decimal(18, 2)
+  entryDate  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([projectId, direction])
+  @@index([companyId])
+}
+
+model AdvancePayment {
+  id           String   @id @default(uuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id])
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id])
+  amount       Decimal  @db.Decimal(18, 2)
+  receivedDate DateTime
+  recoveryPct  Decimal  @db.Decimal(7, 4)
+  recovered    Decimal  @default(0) @db.Decimal(18, 2)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([projectId])
+}
+
+model Payment {
+  id             String              @id @default(uuid())
+  companyId      String
+  company        Company             @relation(fields: [companyId], references: [id])
+  number         String
+  payeeType      PartyType
+  payeeId        String
+  paymentDate    DateTime
+  amount         Decimal             @db.Decimal(18, 2)
+  method         PaymentMethod       @default(BANK_TRANSFER)
+  bankAccountId  String?
+  bankAccount    BankAccount?        @relation(fields: [bankAccountId], references: [id])
+  checkNo        String?
+  reference      String?
+  status         DocStatus           @default(DRAFT)
+  journalEntryId String?
+  createdById    String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  allocations    PaymentAllocation[]
+
+  @@unique([companyId, number])
+  @@index([bankAccountId])
+}
+
+model PaymentAllocation {
+  id         String   @id @default(uuid())
+  paymentId  String
+  payment    Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  targetType String
+  targetId   String
+  amount     Decimal  @db.Decimal(18, 2)
+  createdAt  DateTime @default(now())
+
+  @@index([paymentId])
+}
+
+model BankTransaction {
+  id              String      @id @default(uuid())
+  companyId       String
+  company         Company     @relation(fields: [companyId], references: [id])
+  bankAccountId   String
+  bankAccount     BankAccount @relation(fields: [bankAccountId], references: [id])
+  txnDate         DateTime
+  type            String
+  amount          Decimal     @db.Decimal(18, 2)
+  reference       String?
+  description     String?
+  isStatementLine Boolean     @default(false)
+  reconciled      Boolean     @default(false)
+  matchedType     String?
+  matchedId       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([bankAccountId, txnDate])
+  @@index([companyId])
+}
+
+model ExpenseClaim {
+  id          String    @id @default(uuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id])
+  number      String
+  employeeId  String
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id])
+  wbsNodeId   String?
+  costCodeId  String?
+  category    String
+  description String
+  expenseDate DateTime
+  amount      Decimal   @db.Decimal(18, 2)
+  receiptNo   String?
+  verified    Boolean   @default(false)
+  reimbursed  Boolean   @default(false)
+  status      DocStatus @default(DRAFT)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([companyId, number])
+  @@index([employeeId])
+  @@index([projectId])
+}
+
+model PettyCashFund {
+  id          String           @id @default(uuid())
+  companyId   String
+  company     Company          @relation(fields: [companyId], references: [id])
+  projectId   String
+  project     Project          @relation(fields: [projectId], references: [id])
+  custodianId String
+  custodian   Employee         @relation(fields: [custodianId], references: [id])
+  name        String
+  fundAmount  Decimal          @db.Decimal(18, 2)
+  balance     Decimal          @db.Decimal(18, 2)
+  active      Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  entries     PettyCashEntry[]
+
+  @@index([companyId])
+  @@index([projectId])
+  @@index([custodianId])
+}
+
+model PettyCashEntry {
+  id          String        @id @default(uuid())
+  fundId      String
+  fund        PettyCashFund @relation(fields: [fundId], references: [id])
+  entryDate   DateTime
+  type        String
+  amount      Decimal       @db.Decimal(18, 2)
+  description String?
+  costCodeId  String?
+  wbsNodeId   String?
+  createdAt   DateTime      @default(now())
+
+  @@index([fundId])
+}
+
+// PCAB, SEC, DTI, BIR, PhilGEPS, LGU, DOLE docs, insurance, bonds, permits - all with expiry tracking.
+model ComplianceDocument {
+  id        String             @id @default(uuid())
+  companyId String
+  company   Company            @relation(fields: [companyId], references: [id])
+  projectId String?
+  project   Project?           @relation(fields: [projectId], references: [id])
+  category  ComplianceCategory
+  subType   String?
+  name      String
+  number    String?
+  issuer    String?
+  amount    Decimal?           @db.Decimal(18, 2)
+  issuedAt  DateTime?
+  expiresAt DateTime?
+  status    String             @default("VALID")
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  deletedAt DateTime?
+
+  @@index([companyId])
+  @@index([projectId])
+}
+
+model PcabLicense {
+  id              String   @id @default(uuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id])
+  licenseNo       String
+  category        String
+  classifications String
+  licenseClass    String?
+  validFrom       DateTime
+  validTo         DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([companyId, licenseNo])
+}
+
+// Every document is attached to an entity (project, PO, DR, employee, ...) and versioned.
+model Document {
+  id             String            @id @default(uuid())
+  companyId      String
+  company        Company           @relation(fields: [companyId], references: [id])
+  entityType     String
+  entityId       String
+  category       String
+  name           String
+  currentVersion Int               @default(1)
+  expiresAt      DateTime?
+  createdById    String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  deletedAt      DateTime?
+  versions       DocumentVersion[]
+
+  @@index([companyId, entityType, entityId])
+}
+
+model DocumentVersion {
+  id           String   @id @default(uuid())
+  documentId   String
+  document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  version      Int
+  storageKey   String
+  mimeType     String
+  sizeBytes    Int
+  checksum     String?
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  @@unique([documentId, version])
+}

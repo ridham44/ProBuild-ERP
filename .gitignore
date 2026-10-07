@@ -1,0 +1,10 @@
+node_modules
+dist
+.next
+.turbo
+*.tsbuildinfo
+.env
+.env.local
+coverage
+uploads
+apps/api/openapi.json.tmp

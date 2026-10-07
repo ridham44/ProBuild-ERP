@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: probuild-pg
+    environment:
+      POSTGRES_USER: probuild
+      POSTGRES_PASSWORD: probuild
+      POSTGRES_DB: probuild
+    ports:
+      - "5434:5432"
+    volumes:
+      - probuild-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U probuild"]
+      interval: 5s
+      retries: 10
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: probuild-pg-test
+    environment:
+      POSTGRES_USER: probuild
+      POSTGRES_PASSWORD: probuild
+      POSTGRES_DB: probuild_test
+    ports:
+      - "5435:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+volumes:
+  probuild-pg:

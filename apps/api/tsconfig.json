@@ -1,0 +1,12 @@
+{
+  "extends": "@probuild/config/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "baseUrl": ".",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "incremental": true,
+    "types": ["node"]
+  },
+  "include": ["src", "test", "scripts", "prisma/seed.ts", "vitest*.ts"]
+}

@@ -1,0 +1,135 @@
+// Customers, suppliers, subcontractors and their contacts.
+
+model Customer {
+  id               String          @id @default(uuid())
+  companyId        String
+  company          Company         @relation(fields: [companyId], references: [id])
+  code             String
+  name             String
+  isCompany        Boolean         @default(true)
+  tin              String?
+  vatStatus        VatStatus       @default(VAT)
+  billingAddress   String?
+  siteAddress      String?
+  paymentTermsDays Int             @default(30)
+  creditLimit      Decimal         @default(0) @db.Decimal(18, 2)
+  bankInfo         String?
+  email            String?
+  phone            String?
+  active           Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  deletedAt        DateTime?
+  clientBillings   ClientBilling[]
+  contactPersons   ContactPerson[]
+  projects         Project[]
+
+  @@unique([companyId, code])
+}
+
+model Supplier {
+  id                  String               @id @default(uuid())
+  companyId           String
+  company             Company              @relation(fields: [companyId], references: [id])
+  code                String
+  name                String
+  tin                 String?
+  vatStatus           VatStatus            @default(VAT)
+  address             String?
+  bankInfo            String?
+  paymentTermsDays    Int                  @default(30)
+  category            String?
+  productCategories   String?
+  accredited          Boolean              @default(false)
+  accreditationExpiry DateTime?
+  ewtCode             String?
+  email               String?
+  phone               String?
+  active              Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?
+  projectCostLedgers  ProjectCostLedger[]
+  items               Item[]
+  batchRecords        BatchRecord[]
+  contactPersons      ContactPerson[]
+  supplierEvaluations SupplierEvaluation[]
+  rfqSuppliers        RfqSupplier[]
+  supplierQuotations  SupplierQuotation[]
+  purchaseOrders      PurchaseOrder[]
+  goodsReceipts       GoodsReceipt[]
+  supplierInvoices    SupplierInvoice[]
+
+  @@unique([companyId, code])
+}
+
+model Subcontractor {
+  id             String          @id @default(uuid())
+  companyId      String
+  company        Company         @relation(fields: [companyId], references: [id])
+  code           String
+  name           String
+  tin            String?
+  pcabLicenseNo  String?
+  scope          String?
+  address        String?
+  bankInfo       String?
+  email          String?
+  phone          String?
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+  subcontracts   Subcontract[]
+  contactPersons ContactPerson[]
+
+  @@unique([companyId, code])
+}
+
+model ContactPerson {
+  id              String         @id @default(uuid())
+  companyId       String
+  company         Company        @relation(fields: [companyId], references: [id])
+  customerId      String?
+  customer        Customer?      @relation(fields: [customerId], references: [id])
+  supplierId      String?
+  supplier        Supplier?      @relation(fields: [supplierId], references: [id])
+  subcontractorId String?
+  subcontractor   Subcontractor? @relation(fields: [subcontractorId], references: [id])
+  name            String
+  position        String?
+  email           String?
+  phone           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+
+  @@index([companyId])
+  @@index([customerId])
+  @@index([supplierId])
+  @@index([subcontractorId])
+}
+
+// One row per supplier evaluation period; the scorecard averages these.
+model SupplierEvaluation {
+  id                  String   @id @default(uuid())
+  companyId           String
+  company             Company  @relation(fields: [companyId], references: [id])
+  supplierId          String
+  supplier            Supplier @relation(fields: [supplierId], references: [id])
+  periodStart         DateTime
+  periodEnd           DateTime
+  priceScore          Int
+  qualityScore        Int
+  deliveryScore       Int
+  responsivenessScore Int
+  complianceScore     Int
+  rejectionRatePct    Decimal  @default(0) @db.Decimal(7, 4)
+  notes               String?
+  evaluatedById       String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([supplierId])
+}

@@ -1,0 +1,324 @@
+// Company / organization structure. Every business record hangs off a Company.
+
+enum CompanyType {
+  STANDALONE
+  HOLDING
+  SUBSIDIARY
+  JOINT_VENTURE
+}
+
+enum VatStatus {
+  VAT
+  NON_VAT
+  EXEMPT
+}
+
+enum WarehouseType {
+  CENTRAL
+  REGIONAL
+  PROJECT
+  SITE
+  TEMPORARY
+  CONTAINER
+  YARD
+  TOOL_ROOM
+  EQUIPMENT_YARD
+  QUARANTINE
+  DAMAGED
+}
+
+enum LocationLevel {
+  ZONE
+  RACK
+  SHELF
+  BIN
+}
+
+model Company {
+  id                      String                  @id @default(uuid())
+  code                    String                  @unique
+  legalName               String
+  tradeName               String?
+  type                    CompanyType             @default(STANDALONE)
+  parentCompanyId         String?
+  parentCompany           Company?                @relation("CompanyHierarchy", fields: [parentCompanyId], references: [id])
+  subsidiaries            Company[]               @relation("CompanyHierarchy")
+  tin                     String?
+  secNo                   String?
+  dtiNo                   String?
+  philgepsNo              String?
+  doleRegistrationNo      String?
+  businessPermitNo        String?
+  address                 String?
+  email                   String?
+  phone                   String?
+  vatStatus               VatStatus               @default(VAT)
+  baseCurrency            String                  @default("PHP")
+  fiscalYearStartMonth    Int                     @default(1)
+  active                  Boolean                 @default(true)
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+  deletedAt               DateTime?
+  projectCostLedgers      ProjectCostLedger[]
+  accounts                Account[]
+  journalEntries          JournalEntry[]
+  taxCodes                TaxCode[]
+  taxCertificates         TaxCertificate[]
+  clientBillings          ClientBilling[]
+  collections             Collection[]
+  retentionEntries        RetentionEntry[]
+  advancePayments         AdvancePayment[]
+  payments                Payment[]
+  bankTransactions        BankTransaction[]
+  expenseClaims           ExpenseClaim[]
+  pettyCashFunds          PettyCashFund[]
+  complianceDocuments     ComplianceDocument[]
+  pcabLicenses            PcabLicense[]
+  documents               Document[]
+  unitOfMeasures          UnitOfMeasure[]
+  itemCategories          ItemCategory[]
+  items                   Item[]
+  stockLedgers            StockLedger[]
+  stockBalances           StockBalance[]
+  batchRecords            BatchRecord[]
+  serialUnits             SerialUnit[]
+  ppeIssues               PpeIssue[]
+  materialRequests        MaterialRequest[]
+  materialIssues          MaterialIssue[]
+  materialReturns         MaterialReturn[]
+  warehouseTransfers      WarehouseTransfer[]
+  stockAdjustments        StockAdjustment[]
+  stockCounts             StockCount[]
+  employees               Employee[]
+  employeeCertifications  EmployeeCertification[]
+  shifts                  Shift[]
+  biometricDevices        BiometricDevice[]
+  attendanceImportBatches AttendanceImportBatch[]
+  attendanceRecords       AttendanceRecord[]
+  leaveTypes              LeaveType[]
+  leaveRequests           LeaveRequest[]
+  payrollRuns             PayrollRun[]
+  employeeLoans           EmployeeLoan[]
+  equipment               Equipment[]
+  equipmentAllocations    EquipmentAllocation[]
+  equipmentUsageLogs      EquipmentUsageLog[]
+  maintenanceRecords      MaintenanceRecord[]
+  fuelTransactions        FuelTransaction[]
+  fixedAssets             FixedAsset[]
+  dailySiteReports        DailySiteReport[]
+  progressEntries         ProgressEntry[]
+  hseRecords              HseRecord[]
+  subcontracts            Subcontract[]
+  subcontractClaims       SubcontractClaim[]
+  branches                Branch[]
+  departments             Department[]
+  costCenters             CostCenter[]
+  bankAccounts            BankAccount[]
+  accountingPeriods       AccountingPeriod[]
+  documentSequences       DocumentSequence[]
+  warehouses              Warehouse[]
+  warehouseLocations      WarehouseLocation[]
+  customers               Customer[]
+  suppliers               Supplier[]
+  subcontractors          Subcontractor[]
+  contactPersons          ContactPerson[]
+  supplierEvaluations     SupplierEvaluation[]
+  purchaseRequisitions    PurchaseRequisition[]
+  rfqs                    Rfq[]
+  supplierQuotations      SupplierQuotation[]
+  purchaseOrders          PurchaseOrder[]
+  goodsReceipts           GoodsReceipt[]
+  qcInspections           QcInspection[]
+  supplierInvoices        SupplierInvoice[]
+  projects                Project[]
+  contracts               Contract[]
+  wbsNodes                WbsNode[]
+  costCodes               CostCode[]
+  estimates               Estimate[]
+  boqItems                BoqItem[]
+  budgets                 Budget[]
+  variations              Variation[]
+  claims                  Claim[]
+  scheduleActivities      ScheduleActivity[]
+  rfis                    Rfi[]
+  drawings                Drawing[]
+  closeoutItems           CloseoutItem[]
+  warrantyRecords         WarrantyRecord[]
+  users                   User[]
+  roles                   Role[]
+  approvalWorkflows       ApprovalWorkflow[]
+  approvalRequests        ApprovalRequest[]
+  notifications           Notification[]
+
+  @@index([parentCompanyId])
+}
+
+model Branch {
+  id         String      @id @default(uuid())
+  companyId  String
+  company    Company     @relation(fields: [companyId], references: [id])
+  code       String
+  name       String
+  address    String?
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  deletedAt  DateTime?
+  employees  Employee[]
+  warehouses Warehouse[]
+  projects   Project[]
+
+  @@unique([companyId, code])
+}
+
+model Department {
+  id        String     @id @default(uuid())
+  companyId String
+  company   Company    @relation(fields: [companyId], references: [id])
+  code      String
+  name      String
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  deletedAt DateTime?
+  employees Employee[]
+
+  @@unique([companyId, code])
+}
+
+model CostCenter {
+  id           String        @id @default(uuid())
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id])
+  code         String
+  name         String
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+  stockLedgers StockLedger[]
+  projects     Project[]
+
+  @@unique([companyId, code])
+}
+
+model BankAccount {
+  id               String            @id @default(uuid())
+  companyId        String
+  company          Company           @relation(fields: [companyId], references: [id])
+  bankName         String
+  branchName       String?
+  accountName      String
+  accountNo        String
+  currency         String            @default("PHP")
+  glAccountId      String?
+  glAccount        Account?          @relation(fields: [glAccountId], references: [id])
+  openingBalance   Decimal           @default(0) @db.Decimal(18, 2)
+  active           Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+  collections      Collection[]
+  payments         Payment[]
+  bankTransactions BankTransaction[]
+
+  @@unique([companyId, accountNo])
+  @@index([glAccountId])
+}
+
+model AccountingPeriod {
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  year      Int
+  month     Int
+  startDate DateTime
+  endDate   DateTime
+  closed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, year, month])
+}
+
+// Per-company, per-document-type running number: PO-2026-00001
+model DocumentSequence {
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  docType   String
+  prefix    String
+  year      Int      @default(0)
+  nextNo    Int      @default(1)
+  padding   Int      @default(5)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, docType, year])
+}
+
+model Warehouse {
+  id                   String                @id @default(uuid())
+  companyId            String
+  company              Company               @relation(fields: [companyId], references: [id])
+  branchId             String?
+  branch               Branch?               @relation(fields: [branchId], references: [id])
+  projectId            String?
+  project              Project?              @relation(fields: [projectId], references: [id])
+  parentWarehouseId    String?
+  parentWarehouse      Warehouse?            @relation("WarehouseHierarchy", fields: [parentWarehouseId], references: [id])
+  children             Warehouse[]           @relation("WarehouseHierarchy")
+  transfersFrom        WarehouseTransfer[]   @relation("TransferFrom")
+  transfersTo          WarehouseTransfer[]   @relation("TransferTo")
+  code                 String
+  name                 String
+  type                 WarehouseType         @default(CENTRAL)
+  address              String?
+  managerId            String?
+  active               Boolean               @default(true)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  stockLedgers         StockLedger[]
+  stockBalances        StockBalance[]
+  serialUnits          SerialUnit[]
+  materialRequests     MaterialRequest[]
+  materialIssues       MaterialIssue[]
+  materialReturns      MaterialReturn[]
+  stockAdjustments     StockAdjustment[]
+  stockCounts          StockCount[]
+  warehouseLocations   WarehouseLocation[]
+  purchaseRequisitions PurchaseRequisition[]
+  purchaseOrders       PurchaseOrder[]
+  goodsReceipts        GoodsReceipt[]
+
+  @@unique([companyId, code])
+  @@index([branchId])
+  @@index([projectId])
+  @@index([parentWarehouseId])
+}
+
+// Warehouse -> Zone -> Rack -> Shelf -> Bin. Path example: WH-MNL/A/R03/S02/B15
+model WarehouseLocation {
+  id           String              @id @default(uuid())
+  companyId    String
+  company      Company             @relation(fields: [companyId], references: [id])
+  warehouseId  String
+  warehouse    Warehouse           @relation(fields: [warehouseId], references: [id])
+  parentId     String?
+  parent       WarehouseLocation?  @relation("LocationTree", fields: [parentId], references: [id])
+  children     WarehouseLocation[] @relation("LocationTree")
+  level        LocationLevel
+  code         String
+  fullPath     String
+  qrCode       String?
+  active       Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  deletedAt    DateTime?
+  stockLedgers StockLedger[]
+
+  @@unique([warehouseId, fullPath])
+  @@index([companyId])
+  @@index([parentId])
+}

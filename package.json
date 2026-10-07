@@ -1,0 +1,24 @@
+{
+  "name": "probuild-erp",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.22.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore",
+    "db:up": "docker compose up -d",
+    "db:migrate": "pnpm --filter @probuild/api prisma:migrate",
+    "db:seed": "pnpm --filter @probuild/api prisma:seed",
+    "api-client": "pnpm --filter @probuild/api openapi:generate && pnpm --filter @probuild/api-client generate"
+  },
+  "devDependencies": {
+    "prettier": "3.6.2",
+    "turbo": "2.5.8",
+    "typescript": "5.9.3"
+  }
+}
