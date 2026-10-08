@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
 
-if (existsSync('.env')) process.loadEnvFile('.env');
+if (existsSync('../../.env')) process.loadEnvFile('../../.env');
 
 // Integration tests always run against the dedicated test database, never the development one.
 const testDatabaseUrl =

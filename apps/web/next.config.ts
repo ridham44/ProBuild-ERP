@@ -1,4 +1,8 @@
+import { existsSync } from 'node:fs';
 import type { NextConfig } from 'next';
+
+// One shared .env at the repository root (apps/web is the working directory here).
+if (existsSync('../../.env')) process.loadEnvFile('../../.env');
 
 const apiUrl = process.env.API_URL ?? 'http://localhost:4000';
 

@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { existsSync } from 'node:fs';
 
-if (existsSync('.env')) process.loadEnvFile('.env');
+if (existsSync('../../.env')) process.loadEnvFile('../../.env');
 const prisma = new PrismaClient();
 
 const MANILA_OFFSET_HOURS = 8;

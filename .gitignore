@@ -9,3 +9,5 @@ coverage
 uploads
 apps/api/openapi.json.tmp
 login.md
+.env.vercel
+.env.vercel-*

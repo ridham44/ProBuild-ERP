@@ -4,7 +4,7 @@ import { createApp, mountSwagger } from './bootstrap';
 import { AppConfig } from './config/config.service';
 
 async function main(): Promise<void> {
-  if (existsSync('.env')) process.loadEnvFile('.env');
+  if (existsSync('../../.env')) process.loadEnvFile('../../.env');
   const app = await createApp();
   mountSwagger(app);
   await app.listen(app.get(AppConfig).get('PORT'));

@@ -10,7 +10,7 @@ import * as argon2 from 'argon2';
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 
-if (existsSync('.env')) process.loadEnvFile('.env');
+if (existsSync('../../.env')) process.loadEnvFile('../../.env');
 const prisma = new PrismaClient();
 
 async function main(): Promise<void> {

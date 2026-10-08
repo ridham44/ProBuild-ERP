@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 
 /** Applies every migration to the test database once before the suite runs. */
 export default function setup(): void {
-  if (existsSync('.env')) process.loadEnvFile('.env');
+  if (existsSync('../../.env')) process.loadEnvFile('../../.env');
   const url =
     process.env.TEST_DATABASE_URL ?? 'postgresql://probuild:probuild@localhost:5435/probuild_test?schema=public';
   if (!url.includes('probuild_test')) {
