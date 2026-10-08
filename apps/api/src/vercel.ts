@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createApp } from './bootstrap';
+import { stripPublicPrefix } from './strip-public-prefix';
 
 type RequestListener = (req: IncomingMessage, res: ServerResponse) => void;
 
@@ -19,5 +20,6 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     server = undefined;
     throw error;
   });
+  req.url = stripPublicPrefix(req.url);
   (await server)(req, res);
 }

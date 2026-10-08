@@ -1,7 +1,6 @@
 # Deploying to Vercel (+ Neon)
 
-Two Vercel projects from this one repo. The browser only ever talks to the **web** URL; the web project proxies
-`/api/*` to the API project (see `apps/web/next.config.ts`), so the session cookie stays same-origin.
+One Vercel project with two services (web + api) from this repo, served on one domain.
 
 ## 1. Database (Neon)
 Use a **dedicated** Neon database or branch for ProBuild (never one that holds another app's tables).
@@ -15,27 +14,22 @@ pnpm --filter @probuild/api prisma:seed
 pnpm --filter @probuild/api prisma:seed:demo   # optional: demo customers, suppliers, items, projects
 ```
 
-## 2. API project (`apps/api`)
-Vercel -> New Project -> import the repo -> **Root Directory: `apps/api`** (framework: Other; settings come from `apps/api/vercel.json`).
+## 2. One Vercel project (services)
+Vercel -> New Project -> import the repo -> leave **Root Directory** empty (the repo root).
+The root [vercel.json](vercel.json) defines two services on one domain:
 
-| Env var | Value |
-|---|---|
-| `NODE_ENV` | `production` |
-| `DATABASE_URL` | Neon **pooled** URL + `&pgbouncer=true&connection_limit=1` |
-| `WEB_ORIGINS` | the web project's public URL, e.g. `https://probuild.vercel.app` |
-| `SESSION_TTL_HOURS` | `12` |
-| `LOG_LEVEL` | `info` |
-| `OPENROUTER_API_KEY`, `OPENROUTER_CHAT_MODEL`, `SENTRY_DSN` | optional |
+| Service | Root | Public path |
+|---|---|---|
+| `web` (Next.js) | `apps/web` | everything except `/api/*` |
+| `api` (NestJS) | `apps/api` | `/api/*` (the app serves `/v1/*`, so `/api` is stripped by `apps/api/src/strip-public-prefix.ts`) |
 
-## 3. Web project (`apps/web`)
-Vercel -> New Project -> same repo -> **Root Directory: `apps/web`** (settings come from `apps/web/vercel.json`).
+`web` calls `api` server-side through a binding; Vercel injects its URL as `API_URL`. **Do not set `API_URL` yourself.**
+The browser only calls `/api/*` on the same domain, so the session cookie never crosses origins.
 
-| Env var | Value |
-|---|---|
-| `API_URL` | the API project's URL, e.g. `https://probuild-api.vercel.app` |
-
-Deploy the API first, then set `API_URL` on the web project, then deploy the web project.
-`API_URL` is read at build time (rewrites), so redeploy the web project whenever it changes.
+Paste the contents of `.env.vercel` (repo root, gitignored) into Project Settings -> Environment Variables:
+`NODE_ENV`, `DATABASE_URL` (Neon pooled + `pgbouncer=true&connection_limit=1`), `WEB_ORIGINS`, `SESSION_TTL_HOURS`,
+`LOG_LEVEL`, `OPENROUTER_API_KEY`, `OPENROUTER_CHAT_MODEL`.
+Set `WEB_ORIGINS` to the project's public URL (no trailing slash) and redeploy after the first deploy gives you that URL.
 
 ## 4. After first login
 Change the admin password when prompted, and open the current accounting year (Accounting -> Periods)
