@@ -26,6 +26,8 @@ export function middleware(request: NextRequest) {
   return NextResponse.next({ request: { headers } });
 }
 
+// Vercel services do not support the Edge runtime, so the middleware runs on Node.js (stable since Next.js 15.5).
 export const config = {
+  runtime: 'nodejs',
   matcher: ['/((?!api/|_next/|favicon\\.ico|.*\\..*).*)'],
 };
