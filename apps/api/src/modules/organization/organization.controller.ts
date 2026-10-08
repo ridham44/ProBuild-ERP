@@ -22,6 +22,8 @@ import { z } from 'zod';
 import { AccessService } from '../../common/access.service';
 import { CurrentUser, RequirePermission } from '../../common/decorators/auth.decorators';
 import { OrganizationService } from './organization.service';
+import { Returns } from '../../common/decorators/api-docs';
+import { ActivityItemDto, BankAccountDto, BranchDto, BranchPageDto, CompanyDto, CostCenterDto, CostCenterPageDto, DepartmentDto, DepartmentPageDto, WarehouseDto, WarehouseLocationDto, WarehousePageDto, WarehouseDetailDto, WarehouseStockPageDto, WarehouseSummaryDto } from '../../common/dto/responses.dto';
 
 class PageQueryDto extends createZodDto(paginationQuerySchema) {}
 class UpdateCompanyDto extends createZodDto(updateCompanySchema) {}
@@ -48,30 +50,35 @@ export class OrganizationController {
   ) {}
 
   @Get('company')
+  @Returns(CompanyDto)
   @RequirePermission('organization.company', 'VIEW')
   getCompany(@CurrentUser() user: SessionUser) {
     return this.org.getCompany(user);
   }
 
   @Patch('company')
+  @Returns(CompanyDto)
   @RequirePermission('organization.company', 'EDIT')
   updateCompany(@CurrentUser() user: SessionUser, @Body() body: UpdateCompanyDto) {
     return this.org.updateCompany(user, body);
   }
 
   @Get('branches')
+  @Returns(BranchPageDto)
   @RequirePermission('organization.branch', 'VIEW')
   listBranches(@CurrentUser() user: SessionUser, @Query() query: PageQueryDto) {
     return this.org.listBranches(user, query);
   }
 
   @Post('branches')
+  @Returns(BranchDto, { created: true })
   @RequirePermission('organization.branch', 'CREATE')
   createBranch(@CurrentUser() user: SessionUser, @Body() body: CreateBranchDto) {
     return this.org.createBranch(user, body);
   }
 
   @Patch('branches/:id')
+  @Returns(BranchDto)
   @RequirePermission('organization.branch', 'EDIT')
   updateBranch(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateBranchDto) {
     return this.org.updateBranch(user, id, body);
@@ -85,18 +92,21 @@ export class OrganizationController {
   }
 
   @Get('departments')
+  @Returns(DepartmentPageDto)
   @RequirePermission('organization.department', 'VIEW')
   listDepartments(@CurrentUser() user: SessionUser, @Query() query: PageQueryDto) {
     return this.org.listDepartments(user, query);
   }
 
   @Post('departments')
+  @Returns(DepartmentDto, { created: true })
   @RequirePermission('organization.department', 'CREATE')
   createDepartment(@CurrentUser() user: SessionUser, @Body() body: CreateDepartmentDto) {
     return this.org.createDepartment(user, body);
   }
 
   @Patch('departments/:id')
+  @Returns(DepartmentDto)
   @RequirePermission('organization.department', 'EDIT')
   updateDepartment(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateDepartmentDto) {
     return this.org.updateDepartment(user, id, body);
@@ -110,18 +120,21 @@ export class OrganizationController {
   }
 
   @Get('cost-centers')
+  @Returns(CostCenterPageDto)
   @RequirePermission('organization.department', 'VIEW')
   listCostCenters(@CurrentUser() user: SessionUser, @Query() query: PageQueryDto) {
     return this.org.listCostCenters(user, query);
   }
 
   @Post('cost-centers')
+  @Returns(CostCenterDto, { created: true })
   @RequirePermission('organization.department', 'CREATE')
   createCostCenter(@CurrentUser() user: SessionUser, @Body() body: CreateCostCenterDto) {
     return this.org.createCostCenter(user, body);
   }
 
   @Patch('cost-centers/:id')
+  @Returns(CostCenterDto)
   @RequirePermission('organization.department', 'EDIT')
   updateCostCenter(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateCostCenterDto) {
     return this.org.updateCostCenter(user, id, body);
@@ -135,12 +148,14 @@ export class OrganizationController {
   }
 
   @Get('warehouses')
+  @Returns(WarehousePageDto)
   @RequirePermission('organization.warehouse', 'VIEW')
   listWarehouses(@CurrentUser() user: SessionUser, @Query() query: PageQueryDto) {
     return this.org.listWarehouses(user, query, this.access.warehouseScope(user, 'organization.warehouse', 'VIEW'));
   }
 
   @Get('warehouses/:id')
+  @Returns(WarehouseDetailDto)
   @RequirePermission('organization.warehouse', 'VIEW')
   getWarehouse(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     this.access.assertCan(user, 'organization.warehouse', 'VIEW', { warehouseId: id });
@@ -148,6 +163,7 @@ export class OrganizationController {
   }
 
   @Get('warehouses/:id/summary')
+  @Returns(WarehouseSummaryDto)
   @RequirePermission('organization.warehouse', 'VIEW')
   warehouseSummary(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     this.access.assertCan(user, 'organization.warehouse', 'VIEW', { warehouseId: id });
@@ -155,6 +171,7 @@ export class OrganizationController {
   }
 
   @Get('warehouses/:id/stock')
+  @Returns(WarehouseStockPageDto)
   @RequirePermission('inventory.stock', 'VIEW')
   warehouseStock(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Query() query: WarehouseStockQueryDto) {
     this.access.assertCan(user, 'inventory.stock', 'VIEW', { warehouseId: id });
@@ -162,6 +179,7 @@ export class OrganizationController {
   }
 
   @Get('warehouses/:id/activity')
+  @Returns(ActivityItemDto, { array: true })
   @RequirePermission('organization.warehouse', 'VIEW')
   warehouseActivity(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     this.access.assertCan(user, 'organization.warehouse', 'VIEW', { warehouseId: id });
@@ -169,12 +187,14 @@ export class OrganizationController {
   }
 
   @Post('warehouses')
+  @Returns(WarehouseDto, { created: true })
   @RequirePermission('organization.warehouse', 'CREATE')
   createWarehouse(@CurrentUser() user: SessionUser, @Body() body: CreateWarehouseDto) {
     return this.org.createWarehouse(user, body);
   }
 
   @Patch('warehouses/:id')
+  @Returns(WarehouseDto)
   @RequirePermission('organization.warehouse', 'EDIT')
   updateWarehouse(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateWarehouseDto) {
     this.access.assertCan(user, 'organization.warehouse', 'EDIT', { warehouseId: id });
@@ -182,6 +202,7 @@ export class OrganizationController {
   }
 
   @Get('warehouse-locations')
+  @Returns(WarehouseLocationDto, { array: true })
   @RequirePermission('organization.warehouse', 'VIEW')
   listLocations(@CurrentUser() user: SessionUser, @Query() query: LocationQueryDto) {
     this.access.assertCan(user, 'organization.warehouse', 'VIEW', { warehouseId: query.warehouseId });
@@ -189,24 +210,28 @@ export class OrganizationController {
   }
 
   @Post('warehouse-locations')
+  @Returns(WarehouseLocationDto, { created: true })
   @RequirePermission('organization.warehouse', 'CREATE')
   createLocation(@CurrentUser() user: SessionUser, @Body() body: CreateLocationDto) {
     return this.org.createLocation(user, body);
   }
 
   @Get('bank-accounts')
+  @Returns(BankAccountDto, { array: true })
   @RequirePermission('finance.bank', 'VIEW')
   listBankAccounts(@CurrentUser() user: SessionUser) {
     return this.org.listBankAccounts(user);
   }
 
   @Post('bank-accounts')
+  @Returns(BankAccountDto, { created: true })
   @RequirePermission('finance.bank', 'CREATE')
   createBankAccount(@CurrentUser() user: SessionUser, @Body() body: CreateBankAccountDto) {
     return this.org.createBankAccount(user, body);
   }
 
   @Put('bank-accounts/:id')
+  @Returns(BankAccountDto)
   @RequirePermission('finance.bank', 'EDIT')
   updateBankAccount(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateBankAccountDto) {
     return this.org.updateBankAccount(user, id, body);

@@ -59,6 +59,7 @@ enum DocStatus {
   REJECTED
   CANCELLED
   CLOSED
+  POSTED
 }
 
 enum VariationStatus {
@@ -238,6 +239,7 @@ model WbsNode {
   projectCostLedgers       ProjectCostLedger[]
   stockLedgers             StockLedger[]
   materialRequestLines     MaterialRequestLine[]
+  materialRequests         MaterialRequest[]
   materialIssueLines       MaterialIssueLine[]
   purchaseRequisitionLines PurchaseRequisitionLine[]
   purchaseOrderLines       PurchaseOrderLine[]
@@ -270,6 +272,7 @@ model CostCode {
   projectCostLedgers       ProjectCostLedger[]
   stockLedgers             StockLedger[]
   materialRequestLines     MaterialRequestLine[]
+  materialRequests         MaterialRequest[]
   materialIssueLines       MaterialIssueLine[]
   purchaseRequisitionLines PurchaseRequisitionLine[]
   purchaseOrderLines       PurchaseOrderLine[]

@@ -29,7 +29,7 @@ import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/toast';
 import { useRoles } from '@/features/roles/api/hooks';
-import type { WorkflowDto } from '@/lib/api/contract';
+import type { WorkflowDto } from '@/lib/api/types';
 import { applyServerErrors } from '@/lib/forms';
 import { useUpsertWorkflow } from '../api/hooks';
 import { documentTypeLabel } from '../model';

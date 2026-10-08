@@ -5,7 +5,9 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { ClientMeta, CurrentUser, RequirePermission } from '../../common/decorators/auth.decorators';
 import { AuthService, ClientMetaInfo } from '../auth/auth.service';
-import { SecurityService } from './security.service';
+import { SecurityService } from './security.service';import { Returns } from '../../common/decorators/api-docs';
+import { PasswordResetIssuedDto, RoleAssignmentDto, RoleBaseDto, RoleDto, UserDto } from '../../common/dto/responses.dto';
+
 
 class CreateUserDto extends createZodDto(createUserSchema) {}
 class AssignRoleDto extends createZodDto(assignRoleSchema) {}
@@ -25,18 +27,21 @@ export class SecurityController {
   ) {}
 
   @Get('users')
+  @Returns(UserDto, { array: true })
   @RequirePermission('security.user', 'VIEW')
   listUsers(@CurrentUser() user: SessionUser, @Query() query: UserSearchDto) {
     return this.security.listUsers(user, query.search);
   }
 
   @Post('users')
+  @Returns(UserDto, { created: true })
   @RequirePermission('security.user', 'CREATE')
   createUser(@CurrentUser() user: SessionUser, @Body() body: CreateUserDto) {
     return this.security.createUser(user, body);
   }
 
   @Put('users/:id/active')
+  @Returns(UserDto)
   @RequirePermission('security.user', 'EDIT')
   setActive(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: SetActiveDto) {
     return this.security.setActive(user, id, body.active);
@@ -44,12 +49,14 @@ export class SecurityController {
 
   /** Issues a one-time reset token the admin hands to the user; the user completes it at /auth/password-reset/confirm. */
   @Post('users/:id/password-reset')
+  @Returns(PasswordResetIssuedDto, { created: true })
   @RequirePermission('security.user', 'EDIT')
   issueReset(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @ClientMeta() meta: ClientMetaInfo) {
     return this.auth.issuePasswordReset(user, id, meta);
   }
 
   @Post('users/:id/roles')
+  @Returns(RoleAssignmentDto, { created: true })
   @RequirePermission('security.user', 'EDIT')
   assignRole(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: AssignRoleDto) {
     return this.security.assignRole(user, id, body);
@@ -67,18 +74,21 @@ export class SecurityController {
   }
 
   @Get('roles')
+  @Returns(RoleDto, { array: true })
   @RequirePermission('security.role', 'VIEW')
   listRoles(@CurrentUser() user: SessionUser) {
     return this.security.listRoles(user);
   }
 
   @Post('roles')
+  @Returns(RoleBaseDto, { created: true })
   @RequirePermission('security.role', 'CREATE')
   createRole(@CurrentUser() user: SessionUser, @Body() body: CreateRoleDto) {
     return this.security.createRole(user, body.name, body.description);
   }
 
   @Put('roles/:id/permissions')
+  @Returns(RoleDto)
   @RequirePermission('security.role', 'EDIT')
   setPermissions(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: SetPermissionsDto) {
     return this.security.setRolePermissions(user, id, body.permissions);

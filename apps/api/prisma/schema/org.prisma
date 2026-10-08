@@ -55,6 +55,8 @@ model Company {
   vatStatus               VatStatus               @default(VAT)
   baseCurrency            String                  @default("PHP")
   fiscalYearStartMonth    Int                     @default(1)
+  /// Max quantity (percent of the open PO quantity) a receipt may exceed it by under the OVERRIDE permission.
+  overReceiptTolerancePct Decimal                 @default(10) @db.Decimal(7, 4)
   active                  Boolean                 @default(true)
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
@@ -307,23 +309,24 @@ model Warehouse {
 
 // Warehouse -> Zone -> Rack -> Shelf -> Bin. Path example: WH-MNL/A/R03/S02/B15
 model WarehouseLocation {
-  id           String              @id @default(uuid())
-  companyId    String
-  company      Company             @relation(fields: [companyId], references: [id])
-  warehouseId  String
-  warehouse    Warehouse           @relation(fields: [warehouseId], references: [id])
-  parentId     String?
-  parent       WarehouseLocation?  @relation("LocationTree", fields: [parentId], references: [id])
-  children     WarehouseLocation[] @relation("LocationTree")
-  level        LocationLevel
-  code         String
-  fullPath     String
-  qrCode       String?
-  active       Boolean             @default(true)
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  deletedAt    DateTime?
-  stockLedgers StockLedger[]
+  id                String              @id @default(uuid())
+  companyId         String
+  company           Company             @relation(fields: [companyId], references: [id])
+  warehouseId       String
+  warehouse         Warehouse           @relation(fields: [warehouseId], references: [id])
+  parentId          String?
+  parent            WarehouseLocation?  @relation("LocationTree", fields: [parentId], references: [id])
+  children          WarehouseLocation[] @relation("LocationTree")
+  level             LocationLevel
+  code              String
+  fullPath          String
+  qrCode            String?
+  active            Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  deletedAt         DateTime?
+  stockLedgers      StockLedger[]
+  goodsReceiptLines GoodsReceiptLine[]
 
   @@unique([warehouseId, fullPath])
   @@index([companyId])

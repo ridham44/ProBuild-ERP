@@ -213,12 +213,12 @@ export class SuppliersService extends AuditedService {
         select: { orderDate: true },
       }),
       this.prisma.goodsReceipt.findMany({
-        where: { companyId, supplierId, deletedAt: null, postedAt: { not: null }, order: { expectedDate: { not: null } } },
+        where: { companyId, supplierId, deletedAt: null, status: 'POSTED', postedAt: { not: null }, order: { expectedDate: { not: null } } },
         select: { receiptDate: true, order: { select: { expectedDate: true } } },
         take: 5000,
       }),
       this.prisma.goodsReceiptLine.aggregate({
-        where: { receipt: { companyId, supplierId, deletedAt: null, postedAt: { not: null } } },
+        where: { receipt: { companyId, supplierId, deletedAt: null, status: 'POSTED', postedAt: { not: null } } },
         _sum: { receivedQty: true, rejectedQty: true },
       }),
       this.prisma.supplierEvaluation.aggregate({

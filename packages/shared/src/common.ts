@@ -10,7 +10,11 @@ export const decimalSchema = z
 
 export const positiveDecimalSchema = decimalSchema.refine((v) => Number(v) > 0, 'Must be greater than 0');
 
-export const dateSchema = z.coerce.date();
+/** ISO-8601 date or date-time string in, Date out. A string input keeps the OpenAPI schema representable. */
+export const dateSchema = z
+  .string()
+  .refine((v) => !Number.isNaN(Date.parse(v)), 'Must be a valid ISO date')
+  .transform((v) => new Date(v));
 
 export const MAX_PAGE_SIZE = 100;
 
@@ -32,7 +36,7 @@ export const problemDetailsSchema = z.object({
 });
 export type ProblemDetails = z.infer<typeof problemDetailsSchema>;
 
-export const DOC_STATUSES = ['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED', 'CANCELLED', 'CLOSED'] as const;
+export const DOC_STATUSES = ['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED', 'CANCELLED', 'CLOSED', 'POSTED'] as const;
 export const docStatusSchema = z.enum(DOC_STATUSES);
 
 /** Dimensions every transaction carries where applicable. */

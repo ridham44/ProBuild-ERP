@@ -25,6 +25,8 @@ import { Idempotent } from '../../common/idempotency/idempotency.interceptor';
 import { PurchaseOrdersService } from './purchase-orders.service';
 import { RequisitionsService } from './requisitions.service';
 import { RfqsService } from './rfqs.service';
+import { Returns } from '../../common/decorators/api-docs';
+import { ActivityItemDto, ComparisonDto, PurchaseOrderDetailDto, PurchaseOrderPageDto, QuotationDetailDto, QuotationPageDto, RequisitionDetailDto, RequisitionPageDto, RfqDetailDto, RfqPageDto } from '../../common/dto/responses.dto';
 
 class RequisitionListQueryDto extends createZodDto(requisitionListQuerySchema) {}
 class CreateRequisitionDto extends createZodDto(createRequisitionSchema) {}
@@ -51,24 +53,28 @@ export class RequisitionsController {
   constructor(private readonly requisitions: RequisitionsService) {}
 
   @Get()
+  @Returns(RequisitionPageDto)
   @RequirePermission('procurement.requisition', 'VIEW')
   list(@CurrentUser() user: SessionUser, @Query() query: RequisitionListQueryDto) {
     return this.requisitions.list(user, query);
   }
 
   @Post()
+  @Returns(RequisitionDetailDto, { created: true })
   @RequirePermission('procurement.requisition', 'CREATE')
   create(@CurrentUser() user: SessionUser, @Body() body: CreateRequisitionDto) {
     return this.requisitions.create(user, body);
   }
 
   @Get(':id')
+  @Returns(RequisitionDetailDto)
   @RequirePermission('procurement.requisition', 'VIEW')
   get(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.requisitions.get(user, id);
   }
 
   @Patch(':id')
+  @Returns(RequisitionDetailDto)
   @RequirePermission('procurement.requisition', 'EDIT')
   update(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateRequisitionDto) {
     return this.requisitions.update(user, id, body);
@@ -77,6 +83,7 @@ export class RequisitionsController {
   @Post(':id/submit')
   @Idempotent()
   @HttpCode(200)
+  @Returns(RequisitionDetailDto)
   @RequirePermission('procurement.requisition', 'SUBMIT')
   submit(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.requisitions.submit(user, id);
@@ -85,6 +92,7 @@ export class RequisitionsController {
   @Post(':id/approve')
   @Idempotent()
   @HttpCode(200)
+  @Returns(RequisitionDetailDto)
   @RequirePermission('approvals.inbox', 'APPROVE')
   approve(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: DecisionDto, @ClientMeta() meta: Meta) {
     return this.requisitions.approve(user, id, body.comment, meta);
@@ -93,6 +101,7 @@ export class RequisitionsController {
   @Post(':id/reject')
   @Idempotent()
   @HttpCode(200)
+  @Returns(RequisitionDetailDto)
   @RequirePermission('approvals.inbox', 'REJECT')
   reject(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: RejectionDto, @ClientMeta() meta: Meta) {
     return this.requisitions.reject(user, id, body.comment, meta);
@@ -100,6 +109,7 @@ export class RequisitionsController {
 
   @Post(':id/cancel')
   @HttpCode(200)
+  @Returns(RequisitionDetailDto)
   @RequirePermission('procurement.requisition', 'CANCEL')
   cancel(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: ReasonDto) {
     return this.requisitions.cancel(user, id, body.reason);
@@ -107,12 +117,14 @@ export class RequisitionsController {
 
   @Post(':id/close')
   @HttpCode(200)
+  @Returns(RequisitionDetailDto)
   @RequirePermission('procurement.requisition', 'CLOSE')
   close(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: ReasonDto) {
     return this.requisitions.close(user, id, body.reason);
   }
 
   @Get(':id/activity')
+  @Returns(ActivityItemDto, { array: true })
   @RequirePermission('procurement.requisition', 'VIEW')
   activity(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.requisitions.activityFor(user, id);
@@ -125,24 +137,28 @@ export class RfqsController {
   constructor(private readonly rfqs: RfqsService) {}
 
   @Get()
+  @Returns(RfqPageDto)
   @RequirePermission('procurement.rfq', 'VIEW')
   list(@CurrentUser() user: SessionUser, @Query() query: RfqListQueryDto) {
     return this.rfqs.list(user, query);
   }
 
   @Post()
+  @Returns(RfqDetailDto, { created: true })
   @RequirePermission('procurement.rfq', 'CREATE')
   create(@CurrentUser() user: SessionUser, @Body() body: CreateRfqDto) {
     return this.rfqs.create(user, body);
   }
 
   @Get(':id')
+  @Returns(RfqDetailDto)
   @RequirePermission('procurement.rfq', 'VIEW')
   get(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.rfqs.get(user, id);
   }
 
   @Patch(':id')
+  @Returns(RfqDetailDto)
   @RequirePermission('procurement.rfq', 'EDIT')
   update(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateRfqDto) {
     return this.rfqs.update(user, id, body);
@@ -150,6 +166,7 @@ export class RfqsController {
 
   @Post(':id/send')
   @HttpCode(200)
+  @Returns(RfqDetailDto)
   @RequirePermission('procurement.rfq', 'POST')
   send(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.rfqs.send(user, id);
@@ -157,6 +174,7 @@ export class RfqsController {
 
   @Post(':id/cancel')
   @HttpCode(200)
+  @Returns(RfqDetailDto)
   @RequirePermission('procurement.rfq', 'CANCEL')
   cancel(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: ReasonDto) {
     return this.rfqs.cancel(user, id, body.reason);
@@ -164,12 +182,14 @@ export class RfqsController {
 
   @Post(':id/close')
   @HttpCode(200)
+  @Returns(RfqDetailDto)
   @RequirePermission('procurement.rfq', 'CLOSE')
   close(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: ReasonDto) {
     return this.rfqs.close(user, id, body.reason);
   }
 
   @Get(':id/comparison')
+  @Returns(ComparisonDto)
   @RequirePermission('procurement.rfq', 'VIEW')
   comparison(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.rfqs.comparison(user, id);
@@ -178,18 +198,21 @@ export class RfqsController {
   @Post(':id/award')
   @Idempotent()
   @HttpCode(200)
+  @Returns(RfqDetailDto)
   @RequirePermission('procurement.rfq', 'APPROVE')
   award(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: AwardRfqDto) {
     return this.rfqs.award(user, id, body);
   }
 
   @Post(':id/quotations')
+  @Returns(QuotationDetailDto, { created: true })
   @RequirePermission('procurement.rfq', 'CREATE')
   createQuotation(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: CreateQuotationDto) {
     return this.rfqs.createQuotation(user, id, body);
   }
 
   @Get(':id/activity')
+  @Returns(ActivityItemDto, { array: true })
   @RequirePermission('procurement.rfq', 'VIEW')
   activity(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.rfqs.activityFor(user, id);
@@ -202,18 +225,21 @@ export class QuotationsController {
   constructor(private readonly rfqs: RfqsService) {}
 
   @Get()
+  @Returns(QuotationPageDto)
   @RequirePermission('procurement.rfq', 'VIEW')
   list(@CurrentUser() user: SessionUser, @Query() query: QuotationListQueryDto) {
     return this.rfqs.listQuotations(user, query);
   }
 
   @Get(':id')
+  @Returns(QuotationDetailDto)
   @RequirePermission('procurement.rfq', 'VIEW')
   get(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.rfqs.getQuotation(user, id);
   }
 
   @Put(':id')
+  @Returns(QuotationDetailDto)
   @RequirePermission('procurement.rfq', 'EDIT')
   update(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateQuotationDto) {
     return this.rfqs.updateQuotation(user, id, body);
@@ -226,6 +252,7 @@ export class PurchaseOrdersController {
   constructor(private readonly orders: PurchaseOrdersService) {}
 
   @Get()
+  @Returns(PurchaseOrderPageDto)
   @RequirePermission('procurement.order', 'VIEW')
   list(@CurrentUser() user: SessionUser, @Query() query: PurchaseOrderListQueryDto) {
     return this.orders.list(user, query);
@@ -233,18 +260,21 @@ export class PurchaseOrdersController {
 
   @Post()
   @Idempotent()
+  @Returns(PurchaseOrderDetailDto, { created: true })
   @RequirePermission('procurement.order', 'CREATE')
   create(@CurrentUser() user: SessionUser, @Body() body: CreatePurchaseOrderDto) {
     return this.orders.create(user, body);
   }
 
   @Get(':id')
+  @Returns(PurchaseOrderDetailDto)
   @RequirePermission('procurement.order', 'VIEW')
   get(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.orders.get(user, id);
   }
 
   @Patch(':id')
+  @Returns(PurchaseOrderDetailDto)
   @RequirePermission('procurement.order', 'EDIT')
   update(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: UpdatePurchaseOrderDto) {
     return this.orders.update(user, id, body);
@@ -253,6 +283,7 @@ export class PurchaseOrdersController {
   @Post(':id/submit')
   @Idempotent()
   @HttpCode(200)
+  @Returns(PurchaseOrderDetailDto)
   @RequirePermission('procurement.order', 'SUBMIT')
   submit(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.orders.submit(user, id);
@@ -261,6 +292,7 @@ export class PurchaseOrdersController {
   @Post(':id/approve')
   @Idempotent()
   @HttpCode(200)
+  @Returns(PurchaseOrderDetailDto)
   @RequirePermission('approvals.inbox', 'APPROVE')
   approve(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: DecisionDto, @ClientMeta() meta: Meta) {
     return this.orders.approve(user, id, body.comment, meta);
@@ -269,6 +301,7 @@ export class PurchaseOrdersController {
   @Post(':id/reject')
   @Idempotent()
   @HttpCode(200)
+  @Returns(PurchaseOrderDetailDto)
   @RequirePermission('approvals.inbox', 'REJECT')
   reject(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: RejectionDto, @ClientMeta() meta: Meta) {
     return this.orders.reject(user, id, body.comment, meta);
@@ -276,6 +309,7 @@ export class PurchaseOrdersController {
 
   @Post(':id/send')
   @HttpCode(200)
+  @Returns(PurchaseOrderDetailDto)
   @RequirePermission('procurement.order', 'POST')
   send(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.orders.send(user, id);
@@ -283,6 +317,7 @@ export class PurchaseOrdersController {
 
   @Post(':id/cancel')
   @HttpCode(200)
+  @Returns(PurchaseOrderDetailDto)
   @RequirePermission('procurement.order', 'CANCEL')
   cancel(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: ReasonDto) {
     return this.orders.cancel(user, id, body.reason);
@@ -290,12 +325,14 @@ export class PurchaseOrdersController {
 
   @Post(':id/close')
   @HttpCode(200)
+  @Returns(PurchaseOrderDetailDto)
   @RequirePermission('procurement.order', 'CLOSE')
   close(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: ReasonDto) {
     return this.orders.close(user, id, body.reason);
   }
 
   @Get(':id/activity')
+  @Returns(ActivityItemDto, { array: true })
   @RequirePermission('procurement.order', 'VIEW')
   activity(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.orders.activityFor(user, id);

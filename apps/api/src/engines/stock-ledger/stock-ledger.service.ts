@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, StockLedger, StockStatus, StockTxnType } from '@prisma/client';
 import { BusinessRuleError } from '../../common/errors/domain-errors';
 import { Db } from '../../prisma/prisma.service';
+import { baseUnitFactor } from '../../modules/inventory/units';
 import { NumberingService } from '../numbering/numbering.service';
 
 const D = Prisma.Decimal;
@@ -154,10 +155,13 @@ export class StockLedgerService {
     return rows;
   }
 
-  /** On-hand, reserved (approved requests not yet issued) and available for an item. */
+  /**
+   * On-hand, reserved (approved requests, quantity approved but not yet issued, in base units) and available for an item.
+   * `excludeRequestId` leaves one request's own reservation out: that request is the one being issued against.
+   */
   async availability(
     db: Db,
-    input: { companyId: string; itemId: string; warehouseId?: string },
+    input: { companyId: string; itemId: string; warehouseId?: string; excludeRequestId?: string },
   ): Promise<{ onHand: Prisma.Decimal; reserved: Prisma.Decimal; available: Prisma.Decimal }> {
     const balance = await db.stockBalance.aggregate({
       where: {
@@ -168,21 +172,60 @@ export class StockLedgerService {
       },
       _sum: { qtyOnHand: true },
     });
+    const reservations = await this.reservedByBucket(db, {
+      companyId: input.companyId,
+      itemIds: [input.itemId],
+      warehouseIds: input.warehouseId ? [input.warehouseId] : undefined,
+      excludeRequestId: input.excludeRequestId,
+    });
+    const reserved = [...reservations.values()].reduce((sum, q) => sum.plus(q), new D(0));
+    const onHand = balance._sum.qtyOnHand ?? new D(0);
+    return { onHand, reserved, available: onHand.minus(reserved) };
+  }
+
+  /** Reserved base-unit quantity per `${warehouseId}|${itemId}` for APPROVED material requests. */
+  async reservedByBucket(
+    db: Db,
+    input: { companyId: string; itemIds?: string[]; warehouseIds?: string[]; excludeRequestId?: string },
+  ): Promise<Map<string, Prisma.Decimal>> {
     const lines = await db.materialRequestLine.findMany({
       where: {
-        itemId: input.itemId,
+        ...(input.itemIds ? { itemId: { in: input.itemIds } } : {}),
         request: {
           companyId: input.companyId,
           status: 'APPROVED',
           deletedAt: null,
-          ...(input.warehouseId ? { warehouseId: input.warehouseId } : {}),
+          ...(input.warehouseIds ? { warehouseId: { in: input.warehouseIds } } : {}),
+          ...(input.excludeRequestId ? { id: { not: input.excludeRequestId } } : {}),
         },
       },
-      select: { qty: true, issuedQty: true },
+      select: {
+        approvedQty: true,
+        issuedQty: true,
+        unit: true,
+        request: { select: { warehouseId: true } },
+        item: { select: { id: true, baseUnit: true, purchaseUnit: true, issueUnit: true, conversionFactor: true, unitConversions: { select: { unit: true, factor: true } } } },
+      },
     });
-    const reserved = lines.reduce((sum, l) => sum.plus(Prisma.Decimal.max(l.qty.minus(l.issuedQty), 0)), new D(0));
-    const onHand = balance._sum.qtyOnHand ?? new D(0);
-    return { onHand, reserved, available: onHand.minus(reserved) };
+    const out = new Map<string, Prisma.Decimal>();
+    for (const l of lines) {
+      const open = Prisma.Decimal.max(l.approvedQty.minus(l.issuedQty), 0);
+      if (open.isZero()) continue;
+      const key = `${l.request.warehouseId}|${l.item.id}`;
+      out.set(key, (out.get(key) ?? new D(0)).plus(open.mul(baseUnitFactor(l.item, l.item.unitConversions, l.unit))));
+    }
+    return out;
+  }
+
+  /**
+   * Serializes concurrent writers on the same (warehouse, item) pairs for the rest of the transaction. Pairs are locked in
+   * sorted order so two multi-line documents can never deadlock on each other.
+   */
+  async lockBuckets(db: Db, buckets: Array<{ warehouseId: string; itemId: string }>): Promise<void> {
+    const keys = [...new Set(buckets.map((b) => `${b.warehouseId}|${b.itemId}`))].sort();
+    for (const key of keys) {
+      await db.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))::text`;
+    }
   }
 
   private async postOne(db: Db, m: StockMovement): Promise<StockLedger> {
@@ -198,6 +241,7 @@ export class StockLedgerService {
     if (!item) throw new BusinessRuleError('Item does not exist in this company');
     if (item.trackBatch && !batchNo) throw new BusinessRuleError(`Item ${item.sku} is batch-controlled: batch number required`);
     if (item.trackSerial && !m.serialNo) throw new BusinessRuleError(`Item ${item.sku} is serialized: serial number required`);
+    if (item.trackSerial && !qty.abs().equals(1)) throw new BusinessRuleError(`Item ${item.sku} is serialized: post one unit per serial number`);
     if (item.restrictedProjectId && m.projectId && qty.lt(0) && item.restrictedProjectId !== m.projectId) {
       throw new BusinessRuleError(`Item ${item.sku} is restricted to another project`);
     }

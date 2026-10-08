@@ -44,7 +44,7 @@ export function Topbar({
   onShowShortcuts,
 }: TopbarProps) {
   return (
-    <header className="flex h-topbar shrink-0 items-center gap-2 border-b border-border bg-surface px-3 md:px-4">
+    <header className="flex h-topbar shrink-0 items-center gap-2 border-b border-border bg-surface px-3 md:px-4 print:hidden">
       <IconButton label="Open navigation" onClick={onOpenMenu} className="md:hidden">
         <Menu className="size-4" aria-hidden />
       </IconButton>

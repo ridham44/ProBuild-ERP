@@ -3,13 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PermissionActionKey } from '@probuild/shared';
 import { api } from '@/lib/api/browser';
-import { unwrap } from '@/lib/api/errors';
+import type { RoleDto } from '@/lib/api/types';
+import { apiBody, unwrapAs } from '@/lib/api/errors';
 import { roleKeys } from './keys';
 
 export function useRoles(enabled = true) {
   return useQuery({
     queryKey: roleKeys.lists(),
-    queryFn: async () => unwrap(await api.GET('/v1/roles')),
+    queryFn: async () => unwrapAs<RoleDto[]>(await api.GET('/v1/roles')),
     enabled,
   });
 }
@@ -18,7 +19,7 @@ export function useCreateRole() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: { name: string; description?: string }) =>
-      unwrap(await api.POST('/v1/roles', { body })),
+      unwrapAs<RoleDto>(await api.POST('/v1/roles', { body: apiBody(body) })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: roleKeys.lists() }),
   });
 }
@@ -30,10 +31,11 @@ export function useSetRolePermissions() {
       id: string;
       permissions: Array<{ module: string; action: PermissionActionKey }>;
     }) =>
-      unwrap(
-        await api.PUT('/v1/roles/{id}/permissions', {
+      unwrapAs<RoleDto>(
+        await api.PUT(
+'/v1/roles/{id}/permissions', {
           params: { path: { id: input.id } },
-          body: { permissions: input.permissions },
+          body: apiBody({ permissions: input.permissions }),
         }),
       ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: roleKeys.lists() }),

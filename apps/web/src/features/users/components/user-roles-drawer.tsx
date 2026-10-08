@@ -10,7 +10,7 @@ import { Select } from '@/components/ui/select';
 import { toast } from '@/components/ui/toast';
 import { useBranches } from '@/features/branches/api/hooks';
 import { useRoles } from '@/features/roles/api/hooks';
-import type { RoleAssignmentDto, UserDto } from '@/lib/api/contract';
+import type { RoleAssignmentDto, UserDto } from '@/lib/api/types';
 import { errorMessage } from '@/lib/api/errors';
 import { useAssignRole, useRemoveAssignment } from '../api/hooks';
 

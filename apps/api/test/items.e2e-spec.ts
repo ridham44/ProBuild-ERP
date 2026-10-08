@@ -172,7 +172,7 @@ describe('Items, units, categories and warehouse detail', () => {
       const request = await ctx.prisma.materialRequest.create({
         data: { companyId: w.company.id, number: uniq('MR'), projectId: w.project.id, warehouseId: w.warehouse.id, requestedById: w.users.pm, status: 'APPROVED' },
       });
-      await ctx.prisma.materialRequestLine.create({ data: { requestId: request.id, itemId: item.id, qty: 30, issuedQty: 5, unit: 'pc' } });
+      await ctx.prisma.materialRequestLine.create({ data: { requestId: request.id, itemId: item.id, qty: 30, approvedQty: 30, issuedQty: 5, unit: 'pc' } });
 
       const res = await w.admin.get(`/v1/items/${item.id}/stock`);
       expect(res.status).toBe(200);

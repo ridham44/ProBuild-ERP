@@ -10,7 +10,7 @@ import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
-import type { SessionDto } from '@/lib/api/contract';
+import type { SessionDto } from '@/lib/api/types';
 import { errorMessage } from '@/lib/api/errors';
 import { formatDateTime, formatRelative } from '@/lib/format';
 import { describeUserAgent } from '@/lib/user-agent';

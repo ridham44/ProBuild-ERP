@@ -21,14 +21,46 @@ import {
 } from '@/components/ui/table';
 import { usePeriods } from '@/features/accounting/api/hooks';
 import { useApprovals } from '@/features/approvals/api/hooks';
-import { documentTypeLabel } from '@/features/approvals/model';
+import { documentHref, documentTypeLabel } from '@/features/approvals/model';
+import { usePurchaseOrders } from '@/features/purchase-orders/api/hooks';
+import { useRequisitions } from '@/features/requisitions/api/hooks';
 import { useCan, useCurrentUser } from '@/features/auth/components/current-user';
 import { MONTH_NAMES } from '@/features/company/schemas';
 import { useNotifications } from '@/features/notifications/api/hooks';
-import type { NotificationDto } from '@/lib/api/contract';
+import type { NotificationDto } from '@/lib/api/types';
 import { formatPHP, formatRelative, manilaToday } from '@/lib/format';
 
 const WAITING_LIMIT = 100;
+
+function countLabel(page: { items: unknown[]; nextCursor: string | null } | undefined): string {
+  return page ? `${page.items.length}${page.nextCursor ? '+' : ''}` : '';
+}
+
+/** Real counts from the procurement list endpoints; each tile appears only if the role can open that list. */
+function ProcurementStats() {
+  const canPr = useCan('procurement.requisition', 'VIEW');
+  const canPo = useCan('procurement.order', 'VIEW');
+  const pendingPr = useRequisitions({ status: 'SUBMITTED', limit: WAITING_LIMIT }, canPr);
+  const approvedPr = useRequisitions({ status: 'APPROVED', limit: WAITING_LIMIT }, canPr);
+  const pendingPo = usePurchaseOrders({ status: 'PENDING_APPROVAL', limit: WAITING_LIMIT }, canPo);
+  const openPo = usePurchaseOrders({ status: 'SENT', limit: WAITING_LIMIT }, canPo);
+  return (
+    <>
+      {canPr ? (
+        <>
+          <Stat label="Requisitions in approval" value={countLabel(pendingPr.data)} hint="submitted, awaiting a decision" href="/procurement/requests" loading={pendingPr.isPending} />
+          <Stat label="Approved, not yet ordered" value={countLabel(approvedPr.data)} hint="ready for RFQ or order" href="/procurement/requests" loading={approvedPr.isPending} />
+        </>
+      ) : null}
+      {canPo ? (
+        <>
+          <Stat label="Orders pending approval" value={countLabel(pendingPo.data)} hint="purchase orders" href="/procurement/orders" loading={pendingPo.isPending} />
+          <Stat label="Orders awaiting delivery" value={countLabel(openPo.data)} hint="sent to suppliers" href="/procurement/orders" loading={openPo.isPending} />
+        </>
+      ) : null}
+    </>
+  );
+}
 
 function todayLabel(): string {
   const weekday = new Intl.DateTimeFormat('en-PH', {
@@ -112,7 +144,13 @@ function WaitingOnYou() {
               {rows.map((request) => (
                 <TableRow key={request.id}>
                   <TableCell>
-                    <p className="font-mono text-xs font-medium">{request.documentNo ?? '—'}</p>
+                    {documentHref(request.documentType, request.documentId) ? (
+                      <Link href={documentHref(request.documentType, request.documentId) ?? '#'} className="font-mono text-xs font-medium text-primary hover:underline">
+                        {request.documentNo ?? 'Open'}
+                      </Link>
+                    ) : (
+                      <p className="font-mono text-xs font-medium">{request.documentNo ?? '—'}</p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       {documentTypeLabel(request.documentType)}
                     </p>
@@ -216,6 +254,7 @@ export function DashboardView() {
               href="/finance/accounting-periods"
             />
           ) : null}
+          <ProcurementStats />
         </div>
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
           {canApprove ? <WaitingOnYou /> : <div />}

@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/table';
 import { useCan } from '@/features/auth/components/current-user';
 import { PermissionGate } from '@/features/auth/components/permission-gate';
-import type { WorkflowDto } from '@/lib/api/contract';
+import type { WorkflowDto } from '@/lib/api/types';
 import { formatPHP } from '@/lib/format';
 import { useWorkflows } from '../api/hooks';
 import { documentTypeLabel } from '../model';

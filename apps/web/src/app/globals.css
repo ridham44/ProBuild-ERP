@@ -146,3 +146,28 @@
     scrollbar-color: hsl(var(--border-strong)) transparent;
   }
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000;
+  }
+  /* Print documents in black on white regardless of the on-screen theme. */
+  :root {
+    --background: 0 0% 100%;
+    --surface: 0 0% 100%;
+    --surface-muted: 0 0% 96%;
+    --foreground: 0 0% 8%;
+    --border: 0 0% 78%;
+    --muted-foreground: 0 0% 30%;
+  }
+  tr,
+  article {
+    break-inside: avoid;
+  }
+}

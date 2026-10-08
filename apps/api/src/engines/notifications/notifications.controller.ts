@@ -5,6 +5,8 @@ import { createZodDto } from 'nestjs-zod';
 import { Authenticated, CurrentUser } from '../../common/decorators/auth.decorators';
 import { paginate } from '../../common/pagination';
 import { PrismaService } from '../../prisma/prisma.service';
+import { Returns } from '../../common/decorators/api-docs';
+import { NotificationPageDto, UpdatedCountDto } from '../../common/dto/responses.dto';
 
 class NotificationListQueryDto extends createZodDto(paginationQuerySchema) {}
 
@@ -14,6 +16,7 @@ export class NotificationsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
+  @Returns(NotificationPageDto)
   @Authenticated()
   async list(@CurrentUser() user: SessionUser, @Query() query: NotificationListQueryDto) {
     const page = await paginate(
@@ -30,6 +33,7 @@ export class NotificationsController {
   }
 
   @Post('read-all')
+  @Returns(UpdatedCountDto, { created: true })
   @Authenticated()
   async readAll(@CurrentUser() user: SessionUser) {
     const result = await this.prisma.notification.updateMany({
@@ -40,6 +44,7 @@ export class NotificationsController {
   }
 
   @Post(':id/read')
+  @Returns(UpdatedCountDto, { created: true })
   @Authenticated()
   async read(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
     const result = await this.prisma.notification.updateMany({

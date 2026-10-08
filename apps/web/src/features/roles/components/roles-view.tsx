@@ -13,7 +13,7 @@ import { toast } from '@/components/ui/toast';
 import { useCan, useCurrentUser } from '@/features/auth/components/current-user';
 import { PermissionGate } from '@/features/auth/components/permission-gate';
 import { canUser } from '@/features/auth/permissions';
-import type { RoleDto } from '@/lib/api/contract';
+import type { RoleDto } from '@/lib/api/types';
 import { errorMessage } from '@/lib/api/errors';
 import { cn } from '@/lib/utils';
 import { useRoles, useSetRolePermissions } from '../api/hooks';

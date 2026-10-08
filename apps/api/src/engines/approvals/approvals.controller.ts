@@ -8,6 +8,8 @@ import { ClientMeta, CurrentUser, RequirePermission } from '../../common/decorat
 import { paginate } from '../../common/pagination';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ApprovalsService } from './approvals.service';
+import { Returns } from '../../common/decorators/api-docs';
+import { ApprovalRequestDto, ApprovalRequestPageDto, ApprovalWorkflowDto } from '../../common/dto/responses.dto';
 
 class ApprovalDecisionDto extends createZodDto(approvalDecisionSchema) {}
 class UpsertWorkflowDto extends createZodDto(upsertWorkflowSchema) {}
@@ -23,6 +25,7 @@ export class ApprovalsController {
   ) {}
 
   @Get()
+  @Returns(ApprovalRequestPageDto)
   @RequirePermission('approvals.inbox', 'VIEW')
   list(@CurrentUser() user: SessionUser, @Query() query: ApprovalListQueryDto) {
     const projectScope = this.access.projectScope(user, 'approvals.inbox', 'VIEW');
@@ -39,7 +42,10 @@ export class ApprovalsController {
         this.prisma.approvalRequest.findMany({
           where,
           orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-          include: { requestedBy: { select: { id: true, name: true } }, actions: { orderBy: { createdAt: 'asc' } } },
+          include: {
+            requestedBy: { select: { id: true, name: true } },
+            actions: { orderBy: { createdAt: 'asc' }, include: { approver: { select: { id: true, name: true } } } },
+          },
           ...args,
         }),
       query,
@@ -47,6 +53,7 @@ export class ApprovalsController {
   }
 
   @Post(':id/approve')
+  @Returns(ApprovalRequestDto, { created: true })
   @RequirePermission('approvals.inbox', 'APPROVE')
   approve(
     @CurrentUser() user: SessionUser,
@@ -58,6 +65,7 @@ export class ApprovalsController {
   }
 
   @Post(':id/reject')
+  @Returns(ApprovalRequestDto, { created: true })
   @RequirePermission('approvals.inbox', 'REJECT')
   reject(
     @CurrentUser() user: SessionUser,
@@ -78,6 +86,7 @@ export class ApprovalWorkflowsController {
   ) {}
 
   @Get()
+  @Returns(ApprovalWorkflowDto, { array: true })
   @RequirePermission('security.workflow', 'VIEW')
   list(@CurrentUser() user: SessionUser) {
     return this.prisma.approvalWorkflow.findMany({
@@ -88,6 +97,7 @@ export class ApprovalWorkflowsController {
   }
 
   @Put()
+  @Returns(ApprovalWorkflowDto)
   @RequirePermission('security.workflow', 'EDIT')
   upsert(@CurrentUser() user: SessionUser, @Body() body: UpsertWorkflowDto) {
     return this.approvals.upsertWorkflow(user, body);

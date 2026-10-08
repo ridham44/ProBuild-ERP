@@ -13,24 +13,16 @@ import { ConfigModule } from './config/config.module';
 import { AppConfig } from './config/config.service';
 import { EnginesModule } from './engines/engines.module';
 import { AccountingModule } from './modules/accounting/accounting.module';
-import { AiModule } from './modules/ai/ai.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { ComplianceModule } from './modules/compliance/compliance.module';
-import { DocumentsModule } from './modules/documents/documents.module';
-import { EquipmentModule } from './modules/equipment/equipment.module';
-import { FieldModule } from './modules/field/field.module';
-import { FinanceModule } from './modules/finance/finance.module';
 import { HealthController } from './modules/health/health.controller';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { OrganizationModule } from './modules/organization/organization.module';
 import { PartiesModule } from './modules/parties/parties.module';
-import { PortalModule } from './modules/portal/portal.module';
+import { MaterialsModule } from './modules/materials/materials.module';
 import { ProcurementModule } from './modules/procurement/procurement.module';
+import { ReceivingModule } from './modules/receiving/receiving.module';
 import { ProjectsModule } from './modules/projects/projects.module';
-import { ReportsModule } from './modules/reports/reports.module';
 import { SecurityModule } from './modules/security/security.module';
-import { SubcontractModule } from './modules/subcontract/subcontract.module';
-import { WorkforceModule } from './modules/workforce/workforce.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -68,19 +60,11 @@ import { PrismaModule } from './prisma/prisma.module';
     AccountingModule,
     OrganizationModule,
     PartiesModule,
-    ComplianceModule,
-    DocumentsModule,
     ProjectsModule,
     InventoryModule,
     ProcurementModule,
-    WorkforceModule,
-    EquipmentModule,
-    FinanceModule,
-    SubcontractModule,
-    FieldModule,
-    ReportsModule,
-    AiModule,
-    PortalModule,
+    ReceivingModule,
+    MaterialsModule,
   ],
   controllers: [HealthController],
   providers: [

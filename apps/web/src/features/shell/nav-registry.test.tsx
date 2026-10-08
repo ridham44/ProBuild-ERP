@@ -74,16 +74,17 @@ describe('navigation filtering', () => {
   it('never lists unimplemented areas by default, even for super administrators', () => {
     const ids = flatIds(makeUser({ isSuperAdmin: true }));
     expect(ids).toContain('users');
-    expect(ids).not.toContain('projects');
-    expect(ids).not.toContain('purchase-orders');
+    expect(ids).toContain('purchase-orders');
+    expect(ids).not.toContain('goods-receipts');
+    expect(ids).not.toContain('stock');
     for (const item of NAV_ITEMS.filter((entry) => ids.includes(entry.id)))
       expect(item.implemented).toBe(true);
   });
 
   it('lists planned areas as such only when explicitly requested (development aid)', () => {
     const groups = getVisibleNav(makeUser({ isSuperAdmin: true }), { showPlanned: true });
-    const projects = groups.flatMap((group) => group.items).find((item) => item.id === 'projects');
-    expect(projects?.planned).toBe(true);
+    const receipts = groups.flatMap((group) => group.items).find((item) => item.id === 'goods-receipts');
+    expect(receipts?.planned).toBe(true);
   });
 
   it('keeps groups in directive order and drops empty groups', () => {
@@ -110,6 +111,41 @@ describe('navigation filtering', () => {
     expect(findNavItem('/admin/users')?.id).toBe('users');
     expect(findNavItem('/admin/users/123')?.id).toBe('users');
     expect(findNavItem('/nowhere')).toBeUndefined();
+  });
+});
+
+describe('procurement and master-data entries', () => {
+  it('shows each new screen only to roles that can view its module', () => {
+    const buyer = makeUser({
+      grants: [
+        grant('procurement.requisition', 'VIEW'),
+        grant('procurement.rfq', 'VIEW'),
+        grant('procurement.order', 'VIEW'),
+        grant('parties.supplier', 'VIEW'),
+        grant('inventory.item', 'VIEW'),
+      ],
+    });
+    expect(flatIds(buyer)).toEqual([
+      'dashboard',
+      'suppliers',
+      'requests',
+      'rfqs',
+      'quotations',
+      'purchase-orders',
+      'items',
+    ]);
+    const engineer = makeUser({
+      grants: [grant('projects.project', 'VIEW'), grant('projects.costcode', 'VIEW'), grant('procurement.requisition', 'VIEW')],
+    });
+    expect(flatIds(engineer)).toEqual(['dashboard', 'projects', 'cost-codes', 'requests']);
+  });
+
+  it('resolves detail and sub-routes to their entry, preferring the most specific', () => {
+    expect(findNavItem('/projects/cost-codes')?.id).toBe('cost-codes');
+    expect(findNavItem('/projects/abc')?.id).toBe('projects');
+    expect(findNavItem('/procurement/orders/abc/edit')?.id).toBe('purchase-orders');
+    expect(findNavItem('/procurement/requests/new')?.id).toBe('requests');
+    expect(findNavItem('/inventory/warehouses/x')?.id).toBe('warehouses');
   });
 });
 

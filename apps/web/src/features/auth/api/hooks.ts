@@ -3,7 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { LoginInput, SessionUser } from '@probuild/shared';
 import { api } from '@/lib/api/browser';
-import { unwrap, unwrapVoid } from '@/lib/api/errors';
+import type { SessionDto } from '@/lib/api/types';
+import { apiBody, unwrap, unwrapAs, unwrapVoid } from '@/lib/api/errors';
 import { authKeys } from './keys';
 
 export function useMe(initialData?: SessionUser) {
@@ -38,21 +39,21 @@ export function useLogout() {
 export function useChangePassword() {
   return useMutation({
     mutationFn: async (body: { currentPassword: string; newPassword: string }) =>
-      unwrapVoid(await api.POST('/v1/auth/password', { body })),
+      unwrapVoid(await api.POST('/v1/auth/password', { body: apiBody(body) })),
   });
 }
 
 export function useConfirmPasswordReset() {
   return useMutation({
     mutationFn: async (body: { token: string; newPassword: string }) =>
-      unwrapVoid(await api.POST('/v1/auth/password-reset/confirm', { body })),
+      unwrapVoid(await api.POST('/v1/auth/password-reset/confirm', { body: apiBody(body) })),
   });
 }
 
 export function useSessions() {
   return useQuery({
     queryKey: authKeys.sessions(),
-    queryFn: async () => unwrap(await api.GET('/v1/auth/sessions')),
+    queryFn: async () => unwrapAs<SessionDto[]>(await api.GET('/v1/auth/sessions')),
   });
 }
 
@@ -68,7 +69,7 @@ export function useRevokeSession() {
 export function useRevokeOtherSessions() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async () => unwrap(await api.POST('/v1/auth/sessions/revoke-others')),
+    mutationFn: async () => unwrapAs<{ revoked: number }>(await api.POST('/v1/auth/sessions/revoke-others')),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: authKeys.sessions() }),
   });
 }

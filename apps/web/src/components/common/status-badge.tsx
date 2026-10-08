@@ -7,6 +7,13 @@ import {
   CircleDot,
   Clock,
   Lock,
+  Hourglass,
+  Send,
+  Trophy,
+  Pause,
+  CircleCheck,
+  Flag,
+  Quote,
   PackageCheck,
   Wallet,
   X,
@@ -31,13 +38,24 @@ export const STATUS_DEFINITIONS = {
   OPEN: { label: 'Open', tone: 'success', icon: CircleDot },
   ACTIVE: { label: 'Active', tone: 'success', icon: Check },
   INACTIVE: { label: 'Inactive', tone: 'neutral', icon: Ban },
+  SUBMITTED: { label: 'Submitted', tone: 'pending', icon: Clock },
+  PARTIALLY_ORDERED: { label: 'Partially Ordered', tone: 'info', icon: CircleDot },
+  ORDERED: { label: 'Ordered', tone: 'success', icon: PackageCheck },
+  SENT: { label: 'Sent', tone: 'info', icon: Send },
+  QUOTED: { label: 'Quoted', tone: 'info', icon: Quote },
+  AWARDED: { label: 'Awarded', tone: 'approved', icon: Trophy },
+  NOT_AWARDED: { label: 'Not Awarded', tone: 'neutral', icon: Ban },
+  INVITED: { label: 'Invited', tone: 'neutral', icon: Hourglass },
+  DECLINED: { label: 'Declined', tone: 'rejected', icon: X },
+  PIPELINE: { label: 'Pipeline', tone: 'neutral', icon: Flag },
+  ON_HOLD: { label: 'On Hold', tone: 'warning', icon: Pause },
+  COMPLETED: { label: 'Completed', tone: 'success', icon: CircleCheck },
 } as const satisfies Record<string, { label: string; tone: BadgeTone; icon: LucideIcon }>;
 
 export type StatusKey = keyof typeof STATUS_DEFINITIONS;
 
 const ALIASES: Record<string, StatusKey> = {
   PENDING: 'PENDING_APPROVAL',
-  SUBMITTED: 'PENDING_APPROVAL',
   CANCELED: 'CANCELLED',
 };
 

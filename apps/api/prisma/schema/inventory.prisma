@@ -331,9 +331,24 @@ model MaterialRequest {
   warehouseId    String
   warehouse      Warehouse             @relation(fields: [warehouseId], references: [id])
   requestedById  String
+  employeeId     String?
+  employee       Employee?             @relation(fields: [employeeId], references: [id])
+  wbsNodeId      String?
+  wbsNode        WbsNode?              @relation(fields: [wbsNodeId], references: [id])
+  costCodeId     String?
+  costCode       CostCode?             @relation(fields: [costCodeId], references: [id])
   neededDate     DateTime?
   status         DocStatus             @default(DRAFT)
+  purpose        String?
   remarks        String?
+  estimatedTotal Decimal               @default(0) @db.Decimal(18, 2)
+  submittedAt    DateTime?
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+  cancelledAt    DateTime?
+  cancelReason   String?
+  closedAt       DateTime?
+  closeReason    String?
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
   deletedAt      DateTime?
@@ -343,25 +358,33 @@ model MaterialRequest {
   @@unique([companyId, number])
   @@index([projectId])
   @@index([warehouseId])
+  @@index([employeeId])
+  @@index([wbsNodeId])
+  @@index([costCodeId])
 }
 
 model MaterialRequestLine {
-  id         String          @id @default(uuid())
-  requestId  String
-  request    MaterialRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  itemId     String
-  item       Item            @relation(fields: [itemId], references: [id])
-  wbsNodeId  String?
-  wbsNode    WbsNode?        @relation(fields: [wbsNodeId], references: [id])
-  costCodeId String?
-  costCode   CostCode?       @relation(fields: [costCodeId], references: [id])
-  boqItemId  String?
-  boqItem    BoqItem?        @relation(fields: [boqItemId], references: [id])
-  qty        Decimal         @db.Decimal(18, 4)
-  issuedQty  Decimal         @default(0) @db.Decimal(18, 4)
-  unit       String
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+  id          String              @id @default(uuid())
+  requestId   String
+  request     MaterialRequest     @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        Item                @relation(fields: [itemId], references: [id])
+  wbsNodeId   String?
+  wbsNode     WbsNode?            @relation(fields: [wbsNodeId], references: [id])
+  costCodeId  String?
+  costCode    CostCode?           @relation(fields: [costCodeId], references: [id])
+  boqItemId   String?
+  boqItem     BoqItem?            @relation(fields: [boqItemId], references: [id])
+  lineNo      Int                 @default(0)
+  qty         Decimal             @db.Decimal(18, 4)
+  /// Set at approval (defaults to qty); the approver may reduce it. Reservation and issuing are limited to it.
+  approvedQty Decimal             @default(0) @db.Decimal(18, 4)
+  issuedQty   Decimal             @default(0) @db.Decimal(18, 4)
+  unit        String
+  purpose     String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  issueLines  MaterialIssueLine[]
 
   @@index([requestId])
   @@index([itemId])
@@ -393,10 +416,14 @@ model MaterialIssue {
   status       DocStatus           @default(DRAFT)
   postedAt     DateTime?
   remarks      String?
+  totalCost    Decimal             @default(0) @db.Decimal(18, 2)
+  cancelledAt  DateTime?
+  cancelReason String?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   deletedAt    DateTime?
   lines        MaterialIssueLine[]
+  returns      MaterialReturn[]
 
   @@unique([companyId, number])
   @@index([projectId])
@@ -405,31 +432,39 @@ model MaterialIssue {
 }
 
 model MaterialIssueLine {
-  id         String        @id @default(uuid())
-  issueId    String
-  issue      MaterialIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
-  itemId     String
-  item       Item          @relation(fields: [itemId], references: [id])
-  wbsNodeId  String?
-  wbsNode    WbsNode?      @relation(fields: [wbsNodeId], references: [id])
-  costCodeId String?
-  costCode   CostCode?     @relation(fields: [costCodeId], references: [id])
-  boqItemId  String?
-  boqItem    BoqItem?      @relation(fields: [boqItemId], references: [id])
-  locationId String?
-  qty        Decimal       @db.Decimal(18, 4)
-  unit       String
-  batchNo    String        @default("")
-  serialNo   String?
-  unitCost   Decimal       @default(0) @db.Decimal(18, 4)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id            String               @id @default(uuid())
+  issueId       String
+  issue         MaterialIssue        @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  itemId        String
+  item          Item                 @relation(fields: [itemId], references: [id])
+  wbsNodeId     String?
+  wbsNode       WbsNode?             @relation(fields: [wbsNodeId], references: [id])
+  costCodeId    String?
+  costCode      CostCode?            @relation(fields: [costCodeId], references: [id])
+  boqItemId     String?
+  boqItem       BoqItem?             @relation(fields: [boqItemId], references: [id])
+  locationId    String?
+  qty           Decimal              @db.Decimal(18, 4)
+  unit          String
+  batchNo       String               @default("")
+  serialNo      String?
+  unitCost      Decimal              @default(0) @db.Decimal(18, 4)
+  totalCost     Decimal              @default(0) @db.Decimal(18, 2)
+  /// Quantity in the base unit that was actually moved (qty x the unit's base factor).
+  baseQty       Decimal              @default(0) @db.Decimal(18, 4)
+  lineNo        Int                  @default(0)
+  requestLineId String?
+  requestLine   MaterialRequestLine? @relation(fields: [requestLineId], references: [id])
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  returnLines   MaterialReturnLine[]
 
   @@index([issueId])
   @@index([itemId])
   @@index([wbsNodeId])
   @@index([costCodeId])
   @@index([boqItemId])
+  @@index([requestLineId])
 }
 
 model MaterialReturn {
@@ -443,9 +478,13 @@ model MaterialReturn {
   warehouse    Warehouse            @relation(fields: [warehouseId], references: [id])
   returnDate   DateTime
   returnedById String
+  issueId      String?
+  issue        MaterialIssue?       @relation(fields: [issueId], references: [id])
   reason       String?
   status       DocStatus            @default(DRAFT)
   postedAt     DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
   deletedAt    DateTime?
@@ -454,26 +493,34 @@ model MaterialReturn {
   @@unique([companyId, number])
   @@index([projectId])
   @@index([warehouseId])
+  @@index([issueId])
 }
 
 model MaterialReturnLine {
-  id         String          @id @default(uuid())
-  returnId   String
-  return     MaterialReturn  @relation(fields: [returnId], references: [id], onDelete: Cascade)
-  itemId     String
-  item       Item            @relation(fields: [itemId], references: [id])
-  wbsNodeId  String?
-  costCodeId String?
-  boqItemId  String?
-  qty        Decimal         @db.Decimal(18, 4)
-  unit       String
-  batchNo    String          @default("")
-  condition  ReturnCondition @default(GOOD)
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+  id          String             @id @default(uuid())
+  returnId    String
+  return      MaterialReturn     @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        Item               @relation(fields: [itemId], references: [id])
+  wbsNodeId   String?
+  costCodeId  String?
+  boqItemId   String?
+  qty         Decimal            @db.Decimal(18, 4)
+  unit        String
+  batchNo     String             @default("")
+  serialNo    String?
+  condition   ReturnCondition    @default(GOOD)
+  issueLineId String?
+  issueLine   MaterialIssueLine? @relation(fields: [issueLineId], references: [id])
+  unitCost    Decimal            @default(0) @db.Decimal(18, 4)
+  totalCost   Decimal            @default(0) @db.Decimal(18, 2)
+  baseQty     Decimal            @default(0) @db.Decimal(18, 4)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 
   @@index([returnId])
   @@index([itemId])
+  @@index([issueLineId])
 }
 
 // Warehouse -> warehouse or project -> project. Preserves cost, batch, serial, ownership.
@@ -492,6 +539,12 @@ model WarehouseTransfer {
   status          DocStatus               @default(DRAFT)
   postedAt        DateTime?
   remarks         String?
+  createdById     String?
+  submittedAt     DateTime?
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  cancelledAt     DateTime?
+  cancelReason    String?
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
   deletedAt       DateTime?
@@ -520,21 +573,26 @@ model WarehouseTransferLine {
 }
 
 model StockAdjustment {
-  id          String                @id @default(uuid())
-  companyId   String
-  company     Company               @relation(fields: [companyId], references: [id])
-  number      String
-  warehouseId String
-  warehouse   Warehouse             @relation(fields: [warehouseId], references: [id])
-  adjustDate  DateTime
-  reason      String
-  status      DocStatus             @default(DRAFT)
-  postedAt    DateTime?
-  createdById String
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
-  deletedAt   DateTime?
-  lines       StockAdjustmentLine[]
+  id           String                @id @default(uuid())
+  companyId    String
+  company      Company               @relation(fields: [companyId], references: [id])
+  number       String
+  warehouseId  String
+  warehouse    Warehouse             @relation(fields: [warehouseId], references: [id])
+  adjustDate   DateTime
+  reason       String
+  status       DocStatus             @default(DRAFT)
+  postedAt     DateTime?
+  createdById  String
+  submittedAt  DateTime?
+  approvedAt   DateTime?
+  rejectedAt   DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  deletedAt    DateTime?
+  lines        StockAdjustmentLine[]
 
   @@unique([companyId, number])
   @@index([warehouseId])
@@ -549,6 +607,7 @@ model StockAdjustmentLine {
   batchNo      String          @default("")
   qtyDelta     Decimal         @db.Decimal(18, 4)
   unitCost     Decimal         @default(0) @db.Decimal(18, 4)
+  lineNo       Int             @default(0)
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
@@ -557,20 +616,26 @@ model StockAdjustmentLine {
 }
 
 model StockCount {
-  id          String           @id @default(uuid())
-  companyId   String
-  company     Company          @relation(fields: [companyId], references: [id])
-  number      String
-  warehouseId String
-  warehouse   Warehouse        @relation(fields: [warehouseId], references: [id])
-  countDate   DateTime
-  status      DocStatus        @default(DRAFT)
-  postedAt    DateTime?
-  createdById String
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  deletedAt   DateTime?
-  lines       StockCountLine[]
+  id           String           @id @default(uuid())
+  companyId    String
+  company      Company          @relation(fields: [companyId], references: [id])
+  number       String
+  warehouseId  String
+  warehouse    Warehouse        @relation(fields: [warehouseId], references: [id])
+  countDate    DateTime
+  status       DocStatus        @default(DRAFT)
+  postedAt     DateTime?
+  createdById  String
+  remarks      String?
+  submittedAt  DateTime?
+  approvedAt   DateTime?
+  rejectedAt   DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  deletedAt    DateTime?
+  lines        StockCountLine[]
 
   @@unique([companyId, number])
   @@index([warehouseId])
@@ -585,6 +650,8 @@ model StockCountLine {
   batchNo       String     @default("")
   systemQty     Decimal    @db.Decimal(18, 4)
   physicalQty   Decimal    @db.Decimal(18, 4)
+  counted       Boolean    @default(false)
+  avgCost       Decimal    @default(0) @db.Decimal(18, 4)
   varianceQty   Decimal    @db.Decimal(18, 4)
   varianceValue Decimal    @db.Decimal(18, 2)
   reason        String?

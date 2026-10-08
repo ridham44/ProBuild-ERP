@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
 import { PermissionGate } from '@/features/auth/components/permission-gate';
 import { useCan } from '@/features/auth/components/current-user';
-import type { BranchDto } from '@/lib/api/contract';
+import type { BranchDto } from '@/lib/api/types';
 import { errorMessage } from '@/lib/api/errors';
 import { formatDate } from '@/lib/format';
 import { useDebouncedValue } from '@/lib/use-debounced-value';

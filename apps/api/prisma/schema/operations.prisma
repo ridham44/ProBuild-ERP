@@ -90,6 +90,7 @@ model Employee {
   expenseClaims          ExpenseClaim[]
   pettyCashFunds         PettyCashFund[]
   serialUnits            SerialUnit[]
+  materialRequests       MaterialRequest[]
   ppeIssues              PpeIssue[]
   employeeCertifications EmployeeCertification[]
   attendanceRecords      AttendanceRecord[]

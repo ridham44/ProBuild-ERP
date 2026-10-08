@@ -248,7 +248,7 @@ export const rfqAwardResponseSchema = z.object({
   id, companyId: id, rfqId: id, quotationId: id, supplierId: id, awardedById: id, awardedAt: ts, reason: text, totalAmount: dec, createdAt: ts, updatedAt: ts,
 });
 export const rfqDetailResponseSchema = rfqBase.extend({
-  project: ref.omit({ name: true }).extend({ name: z.string() }),
+  project: ref,
   requisition: z.object({ id, number: z.string(), status: z.string() }).nullable(),
   lines: z.array(rfqLineResponseSchema),
   suppliers: z.array(z.object({

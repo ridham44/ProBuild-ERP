@@ -7,7 +7,7 @@ import { EmptyState } from '@/components/common/empty-state';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { NotificationDto } from '@/lib/api/contract';
+import type { NotificationDto } from '@/lib/api/types';
 import { formatRelative } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {

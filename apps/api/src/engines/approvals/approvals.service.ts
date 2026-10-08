@@ -46,6 +46,18 @@ export class ApprovalsService {
     this.handlers.set(documentType, handler);
   }
 
+  /** True when a workflow with a rule covering this amount is active; documents without one are approved directly. */
+  async requiresApproval(db: Db, companyId: string, documentType: string, amount: Prisma.Decimal | string | number): Promise<boolean> {
+    const value = new Prisma.Decimal(amount);
+    const workflow = await db.approvalWorkflow.findUnique({
+      where: { companyId_documentType: { companyId, documentType } },
+      include: { rules: { include: { steps: true } } },
+    });
+    if (!workflow || !workflow.active) return false;
+    const rule = workflow.rules.find((r) => value.gte(r.minAmount) && (r.maxAmount === null || value.lte(r.maxAmount)));
+    return Boolean(rule && rule.steps.length > 0);
+  }
+
   /** Returns required=false when no workflow/rule applies; the caller then approves the document directly. */
   async submit(db: Db, input: SubmitInput): Promise<SubmitResult> {
     const amount = new Prisma.Decimal(input.amount);

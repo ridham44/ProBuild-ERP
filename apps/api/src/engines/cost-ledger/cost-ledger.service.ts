@@ -9,6 +9,7 @@ type Decimalish = Prisma.Decimal | string | number;
 export type CostEntry = {
   companyId: string;
   projectId: string;
+  branchId?: string | null;
   wbsNodeId?: string | null;
   boqItemId?: string | null;
   costCodeId?: string | null;
@@ -59,6 +60,7 @@ export class CostLedgerService {
       data: {
         companyId: entry.companyId,
         projectId: entry.projectId,
+        branchId: entry.branchId ?? null,
         wbsNodeId: entry.wbsNodeId ?? null,
         boqItemId: entry.boqItemId ?? null,
         costCodeId: entry.costCodeId ?? null,

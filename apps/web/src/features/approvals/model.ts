@@ -1,10 +1,17 @@
 import type { PermissionActionKey, SessionUser } from '@probuild/shared';
 import type { ApprovalStepView } from '@/components/common/approval-timeline';
 import { canUser } from '@/features/auth/permissions';
-import type { ApprovalRequestDto } from '@/lib/api/contract';
+import type { ApprovalRequestDto, ApprovalView } from '@/lib/api/types';
 import { titleCase } from '@/lib/format';
 
 export const documentTypeLabel = (documentType: string): string => titleCase(documentType);
+
+/** Page of the document an approval request is about, for the document types that have one. */
+export function documentHref(documentType: string, documentId: string): string | null {
+  if (documentType === 'PURCHASE_REQUISITION') return `/procurement/requests/${documentId}`;
+  if (documentType === 'PURCHASE_ORDER') return `/procurement/orders/${documentId}`;
+  return null;
+}
 
 export type DecisionRights = { canApprove: boolean; canReject: boolean; reason: string | null };
 
@@ -53,11 +60,7 @@ export function buildApprovalSteps(
     );
     if (decided) {
       const approver =
-        decided.approverId === currentUserId
-          ? 'You'
-          : decided.approverId === request.requestedById
-            ? request.requestedBy.name
-            : 'Approver';
+        decided.approverId === currentUserId ? 'You' : (decided.approver?.name ?? 'Approver');
       return {
         order,
         roleName,
@@ -76,4 +79,54 @@ export function buildApprovalSteps(
     }
     return { order, roleName, state: 'skipped' } satisfies ApprovalStepView;
   });
+}
+
+/**
+ * Same rule as getDecisionRights, for the approval summary embedded in a requisition or purchase order.
+ * The server remains the authority; this only decides whether the buttons are worth showing.
+ */
+export function getDocumentDecisionRights(
+  approval: ApprovalView | undefined,
+  actor: Actor,
+  projectId: string | null,
+): DecisionRights {
+  const none = (reason: string): DecisionRights => ({ canApprove: false, canReject: false, reason });
+  if (!approval) return none('This document has not been submitted for approval.');
+  if (approval.status !== 'PENDING') return none('This approval has already been decided.');
+  if (!actor.isSuperAdmin) {
+    if (!approval.currentRole || !actor.roles.includes(approval.currentRole))
+      return none(`Waiting on the ${approval.currentRole ?? 'next'} role.`);
+    if (approval.requestedBy.id === actor.id) return none('You cannot approve your own request.');
+    if (approval.steps.some((step) => step.decidedBy?.id === actor.id))
+      return none('You have already acted on this request.');
+  }
+  const scope = { projectId };
+  const canApprove = canUser(actor, 'approvals.inbox', 'APPROVE', scope);
+  const canReject = canUser(actor, 'approvals.inbox', 'REJECT', scope);
+  if (!canApprove && !canReject) return none('Your role cannot approve or reject in this project.');
+  return { canApprove, canReject, reason: null };
+}
+
+const STEP_STATE: Record<ApprovalView['steps'][number]['state'], ApprovalStepView['state']> = {
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+  CURRENT: 'current',
+  WAITING: 'waiting',
+  CANCELLED: 'skipped',
+};
+
+export function buildDocumentApprovalSteps(
+  approval: ApprovalView,
+  currentUserId: string,
+): ApprovalStepView[] {
+  return approval.steps.map((step) => ({
+    order: step.step,
+    roleName: step.role,
+    state: STEP_STATE[step.state],
+    ...(step.decidedBy
+      ? { approver: step.decidedBy.id === currentUserId ? 'You' : step.decidedBy.name }
+      : {}),
+    ...(step.decidedAt ? { decidedAt: step.decidedAt } : {}),
+    comment: step.comment,
+  }));
 }

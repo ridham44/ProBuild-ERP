@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { PermissionGate } from '@/features/auth/components/permission-gate';
 import { useCan } from '@/features/auth/components/current-user';
-import type { CompanyDto, CompanyUpdate } from '@/lib/api/contract';
+import type { CompanyDto, CompanyUpdate } from '@/lib/api/types';
 import { applyServerErrors } from '@/lib/forms';
 import { formatDateTime } from '@/lib/format';
 import { useCompany, useUpdateCompany } from '../api/hooks';

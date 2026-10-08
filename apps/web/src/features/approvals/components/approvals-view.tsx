@@ -2,6 +2,7 @@
 
 import type { DataColumn } from '@/components/common/data-table/column-meta';
 import { ClipboardCheck } from 'lucide-react';
+import Link from 'next/link';
 import * as React from 'react';
 import { DataTable } from '@/components/common/data-table/data-table';
 import { EmptyState } from '@/components/common/empty-state';
@@ -15,10 +16,10 @@ import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { PermissionGate } from '@/features/auth/components/permission-gate';
 import { APPROVAL_DOCUMENT_TYPES, type ApprovalDocumentType } from '@probuild/shared';
-import type { ApprovalFilters, ApprovalRequestDto, ApprovalStatusKey } from '@/lib/api/contract';
+import type { ApprovalFilters, ApprovalRequestDto, ApprovalStatusKey } from '@/lib/api/types';
 import { formatPHP, formatRelative } from '@/lib/format';
 import { useApprovals } from '../api/hooks';
-import { documentTypeLabel } from '../model';
+import { documentHref, documentTypeLabel } from '../model';
 import { ApprovalDetailDrawer } from './approval-detail-drawer';
 
 const PAGE_SIZE = 25;
@@ -60,7 +61,16 @@ export function ApprovalsView() {
         meta: { sticky: true },
         cell: ({ row }) => (
           <div>
-            <p className="font-mono text-xs font-medium">{row.original.documentNo ?? '—'}</p>
+            {documentHref(row.original.documentType, row.original.documentId) ? (
+              <Link
+                href={documentHref(row.original.documentType, row.original.documentId) ?? '#'}
+                className="font-mono text-xs font-medium text-primary hover:underline"
+              >
+                {row.original.documentNo ?? 'Open'}
+              </Link>
+            ) : (
+              <p className="font-mono text-xs font-medium">{row.original.documentNo ?? '—'}</p>
+            )}
             <p className="text-xs text-muted-foreground">
               {documentTypeLabel(row.original.documentType)}
             </p>

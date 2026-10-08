@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { PermissionGate } from '@/features/auth/components/permission-gate';
 import { MONTH_NAMES } from '@/features/company/schemas';
-import type { PeriodDto } from '@/lib/api/contract';
+import type { PeriodDto } from '@/lib/api/types';
 import { formatDate, manilaToday } from '@/lib/format';
 import { usePeriods } from '../api/hooks';
 

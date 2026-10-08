@@ -4,7 +4,7 @@ import type { RequisitionLineInput } from '@probuild/shared';
 import { BusinessRuleError } from '../../common/errors/domain-errors';
 import { dec, round2 } from '../../common/money';
 import { Db } from '../../prisma/prisma.service';
-import { allowedUnits } from '../inventory/units';
+import { allowedUnits, baseUnitFactor } from '../inventory/units';
 
 export type ResolvedRequisitionLine = {
   input: RequisitionLineInput;
@@ -71,7 +71,8 @@ export class ProcurementValidator {
       if (!allowedUnits(item, item.unitConversions).has(unit)) {
         issues.push({ path: at('unit'), message: `Unit ${unit} is not defined for item ${item.sku}` });
       }
-      const defaultCost = item.lastPurchaseCost.gt(0) ? item.lastPurchaseCost : item.standardCost;
+      // lastPurchaseCost and standardCost are per BASE unit; the line may be in a larger unit.
+      const defaultCost = (item.lastPurchaseCost.gt(0) ? item.lastPurchaseCost : item.standardCost).mul(baseUnitFactor(item, item.unitConversions, unit));
       const estimatedUnitCost = line.estimatedUnitCost === undefined ? defaultCost : dec(line.estimatedUnitCost);
       resolved.push({ input: line, item, unit, estimatedUnitCost, estimatedAmount: round2(dec(line.qty).mul(estimatedUnitCost)) });
     });

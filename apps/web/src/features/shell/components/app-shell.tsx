@@ -10,6 +10,7 @@ import { CurrentUserProvider } from '@/features/auth/components/current-user';
 import { WorkContextProvider } from '@/features/context/work-context';
 import { NotificationsDrawer } from '@/features/notifications/components/notifications-drawer';
 import { CommandPalette } from '@/features/search/components/command-palette';
+import { useRegisterDomainSearchProviders } from '@/features/search/domain-providers';
 import { useGlobalShortcuts } from '../use-global-shortcuts';
 import { Sidebar, SidebarNav } from './sidebar';
 import { ShortcutsDialog } from './shortcuts-dialog';
@@ -54,9 +55,10 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
   const openHelp = React.useCallback(() => setHelpOpen(true), []);
 
   useGlobalShortcuts({ openPalette, openHelp, toggleSidebar });
+  useRegisterDomainSearchProviders();
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background print:block print:h-auto print:overflow-visible">
       <a
         href="#main"
         className="sr-only z-[70] rounded bg-surface px-3 py-2 text-sm font-medium focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
@@ -64,14 +66,14 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
         Skip to content
       </a>
       <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col print:block">
         <Topbar
           onOpenMenu={() => setMobileOpen(true)}
           onOpenSearch={openPalette}
           onOpenNotifications={() => setNotificationsOpen(true)}
           onShowShortcuts={openHelp}
         />
-        <main id="main" tabIndex={-1} className="scroll-thin flex-1 overflow-y-auto outline-none">
+        <main id="main" tabIndex={-1} className="scroll-thin flex-1 overflow-y-auto outline-none print:overflow-visible">
           <div className="mx-auto w-full max-w-[1440px] px-4 py-5 md:px-6 md:py-6">{children}</div>
         </main>
       </div>

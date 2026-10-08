@@ -1,3 +1,4 @@
+import type { ApprovalDocumentType } from '@probuild/shared';
 import type TestAgent from 'supertest/lib/agent';
 import { login, TestContext } from './app';
 import { createCompany, createCustomerAndProject, createUser, createWarehouse, TEST_PASSWORD, TestCompany } from './fixtures';
@@ -69,7 +70,7 @@ export async function userAgent(
 
 export async function setWorkflow(
   admin: Agent,
-  documentType: 'PURCHASE_REQUISITION' | 'PURCHASE_ORDER',
+  documentType: ApprovalDocumentType,
   rules: Array<{ minAmount: string; maxAmount?: string; steps: string[] }>,
 ): Promise<void> {
   const res = await admin.put('/v1/approval-workflows').send({

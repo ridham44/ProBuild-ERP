@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, X } from 'lucide-react';
+import Link from 'next/link';
 import * as React from 'react';
 import { ApprovalTimeline } from '@/components/common/approval-timeline';
 import { StatusBadge } from '@/components/common/status-badge';
@@ -11,11 +12,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast';
 import { useCurrentUser } from '@/features/auth/components/current-user';
-import type { ApprovalRequestDto } from '@/lib/api/contract';
+import type { ApprovalRequestDto } from '@/lib/api/types';
 import { errorMessage } from '@/lib/api/errors';
 import { formatDateTime, formatPHP } from '@/lib/format';
 import { useDecideApproval } from '../api/hooks';
-import { buildApprovalSteps, documentTypeLabel, getDecisionRights } from '../model';
+import { buildApprovalSteps, documentHref, documentTypeLabel, getDecisionRights } from '../model';
 
 const COMMENT_LIMIT = 500;
 
@@ -25,7 +26,16 @@ function Summary({ request }: { request: ApprovalRequestDto }) {
       <div>
         <dt className="text-xs text-muted-foreground">Document</dt>
         <dd className="font-medium">
-          {request.documentNo ?? documentTypeLabel(request.documentType)}
+          {documentHref(request.documentType, request.documentId) ? (
+            <Link
+              href={documentHref(request.documentType, request.documentId) ?? '#'}
+              className="text-primary hover:underline"
+            >
+              {request.documentNo ?? documentTypeLabel(request.documentType)}
+            </Link>
+          ) : (
+            (request.documentNo ?? documentTypeLabel(request.documentType))
+          )}
         </dd>
       </div>
       <div>

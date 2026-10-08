@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input, Textarea } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast';
-import type { BranchDto } from '@/lib/api/contract';
+import type { BranchDto } from '@/lib/api/types';
 import { applyServerErrors } from '@/lib/forms';
 import { useCreateBranch, useUpdateBranch } from '../api/hooks';
 import { branchFormSchema, type BranchFormValues } from '../schemas';

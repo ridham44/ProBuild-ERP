@@ -340,10 +340,11 @@ export class ItemsService extends AuditedService {
   async priceHistory(user: SessionUser, itemId: string, query: PriceHistoryQuery) {
     await this.findRaw(user, itemId);
     const cursor = this.parseCursor(query.cursor);
-    const after = (source: 'QUOTATION' | 'PURCHASE_ORDER', field: 'quoteDate' | 'orderDate') => {
+    // Cursor condition applied at line level: the tie-break id is the line id, the date lives on the parent.
+    const after = (source: 'QUOTATION' | 'PURCHASE_ORDER', parent: 'quotation' | 'order', field: 'quoteDate' | 'orderDate') => {
       if (!cursor) return {};
-      const idRule = source === cursor.source ? { id: { lt: cursor.id } } : source > cursor.source ? {} : { id: { in: [] as string[] } };
-      return { OR: [{ [field]: { lt: cursor.at } }, { [field]: cursor.at, ...idRule }] };
+      const tie = source === cursor.source ? { id: { lt: cursor.id } } : source > cursor.source ? {} : { id: { in: [] as string[] } };
+      return { OR: [{ [parent]: { [field]: { lt: cursor.at } } }, { [parent]: { [field]: cursor.at }, ...tie }] };
     };
     const range = (field: 'quoteDate' | 'orderDate') => ({
       ...(query.from || query.to ? { [field]: { ...(query.from ? { gte: query.from } : {}), ...(query.to ? { lte: query.to } : {}) } } : {}),
@@ -357,7 +358,8 @@ export class ItemsService extends AuditedService {
         ? this.prisma.supplierQuotationLine.findMany({
             where: {
               itemId,
-              quotation: { companyId: user.companyId, ...(query.supplierId ? { supplierId: query.supplierId } : {}), ...range('quoteDate'), ...after('QUOTATION', 'quoteDate') },
+              quotation: { companyId: user.companyId, ...(query.supplierId ? { supplierId: query.supplierId } : {}), ...range('quoteDate') },
+              ...after('QUOTATION', 'quotation', 'quoteDate'),
             },
             orderBy: [{ quotation: { quoteDate: 'desc' } }, { id: 'desc' }],
             take,
@@ -377,8 +379,8 @@ export class ItemsService extends AuditedService {
                 status: { in: [...PRICED_PO_STATUSES] },
                 ...(query.supplierId ? { supplierId: query.supplierId } : {}),
                 ...range('orderDate'),
-                ...after('PURCHASE_ORDER', 'orderDate'),
               },
+              ...after('PURCHASE_ORDER', 'order', 'orderDate'),
             },
             orderBy: [{ order: { orderDate: 'desc' } }, { id: 'desc' }],
             take,

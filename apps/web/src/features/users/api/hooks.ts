@@ -3,7 +3,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AssignRoleInput, CreateUserInput } from '@probuild/shared';
 import { api } from '@/lib/api/browser';
-import { unwrap, unwrapVoid } from '@/lib/api/errors';
+import type { RoleAssignmentRow, UserDto } from '@/lib/api/types';
+import { apiBody, unwrapAs, unwrapVoid } from '@/lib/api/errors';
 import { roleKeys } from '@/features/roles/api/keys';
 import { userKeys } from './keys';
 
@@ -11,7 +12,7 @@ export function useUsers(search: string, enabled = true) {
   return useQuery({
     queryKey: userKeys.list(search),
     queryFn: async () =>
-      unwrap(await api.GET('/v1/users', { params: { query: search ? { search } : {} } })),
+      unwrapAs<UserDto[]>(await api.GET('/v1/users', { params: { query: search ? { search } : {} } })),
     placeholderData: keepPreviousData,
     enabled,
   });
@@ -20,7 +21,7 @@ export function useUsers(search: string, enabled = true) {
 export function useCreateUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (body: CreateUserInput) => unwrap(await api.POST('/v1/users', { body })),
+    mutationFn: async (body: CreateUserInput) => unwrapAs<UserDto>(await api.POST('/v1/users', { body: apiBody(body) })),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: userKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: roleKeys.lists() });
@@ -32,10 +33,11 @@ export function useSetUserActive() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { id: string; active: boolean }) =>
-      unwrap(
-        await api.PUT('/v1/users/{id}/active', {
+      unwrapAs<UserDto>(
+        await api.PUT(
+'/v1/users/{id}/active', {
           params: { path: { id: input.id } },
-          body: { active: input.active },
+          body: apiBody({ active: input.active }),
         }),
       ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: userKeys.lists() }),
@@ -45,7 +47,7 @@ export function useSetUserActive() {
 export function useIssuePasswordReset() {
   return useMutation({
     mutationFn: async (id: string) =>
-      unwrap(await api.POST('/v1/users/{id}/password-reset', { params: { path: { id } } })),
+      unwrapAs<{ token: string; expiresAt: string }>(await api.POST('/v1/users/{id}/password-reset', { params: { path: { id } } })),
   });
 }
 
@@ -53,10 +55,11 @@ export function useAssignRole() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: { userId: string; body: AssignRoleInput }) =>
-      unwrap(
-        await api.POST('/v1/users/{id}/roles', {
+      unwrapAs<RoleAssignmentRow>(
+        await api.POST(
+'/v1/users/{id}/roles', {
           params: { path: { id: input.userId } },
-          body: input.body,
+          body: apiBody(input.body),
         }),
       ),
     onSuccess: () => {

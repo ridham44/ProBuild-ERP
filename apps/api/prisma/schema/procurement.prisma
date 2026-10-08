@@ -50,6 +50,13 @@ enum QcResult {
   ACCEPTED
   REJECTED
   QUARANTINED
+  PARTIAL
+}
+
+enum QcOutcome {
+  PASS
+  FAIL
+  PARTIAL
 }
 
 enum MatchStatus {
@@ -390,28 +397,33 @@ model PurchaseOrderLine {
 
 // Goods receipt / delivery receipt. Partial deliveries leave the PO line outstanding.
 model GoodsReceipt {
-  id           String             @id @default(uuid())
-  companyId    String
-  company      Company            @relation(fields: [companyId], references: [id])
-  number       String
-  orderId      String
-  order        PurchaseOrder      @relation(fields: [orderId], references: [id])
-  supplierId   String
-  supplier     Supplier           @relation(fields: [supplierId], references: [id])
-  warehouseId  String
-  warehouse    Warehouse          @relation(fields: [warehouseId], references: [id])
-  receiptDate  DateTime
-  supplierDrNo String?
-  vehicle      String?
-  driver       String?
-  status       DocStatus          @default(DRAFT)
-  postedAt     DateTime?
-  receivedById String
-  remarks      String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  deletedAt    DateTime?
-  lines        GoodsReceiptLine[]
+  id                String             @id @default(uuid())
+  companyId         String
+  company           Company            @relation(fields: [companyId], references: [id])
+  number            String
+  orderId           String
+  order             PurchaseOrder      @relation(fields: [orderId], references: [id])
+  supplierId        String
+  supplier          Supplier           @relation(fields: [supplierId], references: [id])
+  warehouseId       String
+  warehouse         Warehouse          @relation(fields: [warehouseId], references: [id])
+  receiptDate       DateTime
+  supplierDrNo      String?
+  vehicle           String?
+  driver            String?
+  status            DocStatus          @default(DRAFT)
+  postedAt          DateTime?
+  receivedById      String
+  remarks           String?
+  cancelledAt       DateTime?
+  cancelReason      String?
+  /// Mandatory reason when the receipt exceeded the open PO quantity under a controlled override.
+  overReceiptReason String?
+  overReceiptById   String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+  lines             GoodsReceiptLine[]
 
   @@unique([companyId, number])
   @@index([orderId])
@@ -420,27 +432,38 @@ model GoodsReceipt {
 }
 
 model GoodsReceiptLine {
-  id            String            @id @default(uuid())
-  receiptId     String
-  receipt       GoodsReceipt      @relation(fields: [receiptId], references: [id], onDelete: Cascade)
-  orderLineId   String
-  orderLine     PurchaseOrderLine @relation(fields: [orderLineId], references: [id])
-  itemId        String
-  item          Item              @relation(fields: [itemId], references: [id])
-  receivedQty   Decimal           @db.Decimal(18, 4)
-  acceptedQty   Decimal           @default(0) @db.Decimal(18, 4)
-  rejectedQty   Decimal           @default(0) @db.Decimal(18, 4)
-  quarantineQty Decimal           @default(0) @db.Decimal(18, 4)
-  unit          String
-  unitCost      Decimal           @db.Decimal(18, 4)
-  batchNo       String            @default("")
-  expiryDate    DateTime?
-  qcResult      QcResult          @default(PENDING)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  inspections   QcInspection[]
+  id                String             @id @default(uuid())
+  receiptId         String
+  receipt           GoodsReceipt       @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  orderLineId       String
+  orderLine         PurchaseOrderLine  @relation(fields: [orderLineId], references: [id])
+  itemId            String
+  item              Item               @relation(fields: [itemId], references: [id])
+  receivedQty       Decimal            @db.Decimal(18, 4)
+  acceptedQty       Decimal            @default(0) @db.Decimal(18, 4)
+  rejectedQty       Decimal            @default(0) @db.Decimal(18, 4)
+  quarantineQty     Decimal            @default(0) @db.Decimal(18, 4)
+  unit              String
+  unitCost          Decimal            @db.Decimal(18, 4)
+  batchNo           String             @default("")
+  expiryDate        DateTime?
+  qcResult          QcResult           @default(PENDING)
+  lineNo            Int                @default(0)
+  locationId        String?
+  location          WarehouseLocation? @relation(fields: [locationId], references: [id])
+  /// Serial numbers in receiving order: accepted first, then quarantined, then rejected.
+  serialNos         String[]
+  /// Quantity above the open PO quantity that was accepted under the over-receipt override (PO units).
+  overReceivedQty   Decimal            @default(0) @db.Decimal(18, 4)
+  rejectionReason   String?
+  /// Quantity still sitting in QUARANTINE stock, awaiting a release/reject decision (PO units).
+  quarantineOpenQty Decimal            @default(0) @db.Decimal(18, 4)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  inspections       QcInspection[]
 
   @@index([receiptId])
+  @@index([locationId])
   @@index([orderLineId])
   @@index([itemId])
 }
@@ -453,6 +476,14 @@ model QcInspection {
   receiptLine   GoodsReceiptLine @relation(fields: [receiptLineId], references: [id], onDelete: Cascade)
   inspectorId   String
   result        QcResult
+  outcome       QcOutcome        @default(PASS)
+  /// RECEIVING = recorded while the receipt was a draft; QUARANTINE_RELEASE = decision on quarantined stock after posting.
+  phase         String           @default("RECEIVING")
+  acceptedQty   Decimal          @default(0) @db.Decimal(18, 4)
+  rejectedQty   Decimal          @default(0) @db.Decimal(18, 4)
+  quarantineQty Decimal          @default(0) @db.Decimal(18, 4)
+  reason        String?
+  attachments   Json?
   checklist     Json?
   testResult    String?
   certificateNo String?

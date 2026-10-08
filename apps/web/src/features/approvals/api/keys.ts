@@ -1,4 +1,4 @@
-import type { ApprovalFilters } from '@/lib/api/contract';
+import type { ApprovalFilters } from '@/lib/api/types';
 
 export const approvalKeys = {
   all: ['approvals'] as const,

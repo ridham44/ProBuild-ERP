@@ -1,5 +1,5 @@
+import { type paths } from '@probuild/api-client';
 import createClient, { type Middleware } from 'openapi-fetch';
-import type { WebPaths } from './contract';
 
 export type WebClientOptions = {
   baseUrl: string;
@@ -7,9 +7,9 @@ export type WebClientOptions = {
   onUnauthorized?: () => void;
 };
 
-/** Mirrors `createApiClient` from @probuild/api-client, typed with the local response contract. */
+/** Mirrors `createApiClient` from @probuild/api-client, plus header injection for server-side calls. */
 export function createWebClient(options: WebClientOptions) {
-  const client = createClient<WebPaths>({
+  const client = createClient<paths>({
     baseUrl: options.baseUrl,
     credentials: 'include',
     ...(options.headers ? { headers: options.headers } : {}),

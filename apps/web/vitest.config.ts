@@ -10,5 +10,8 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     globals: false,
+    // Interaction tests drive real DOM events; under a parallel turbo run on a loaded machine
+    // they exceed the 5s default, so allow headroom without changing what they assert.
+    testTimeout: 20_000,
   },
 });

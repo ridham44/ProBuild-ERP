@@ -22,7 +22,7 @@ import { toast } from '@/components/ui/toast';
 import { useCan, useCurrentUser } from '@/features/auth/components/current-user';
 import { PermissionGate } from '@/features/auth/components/permission-gate';
 import { canUser } from '@/features/auth/permissions';
-import type { UserDto } from '@/lib/api/contract';
+import type { UserDto } from '@/lib/api/types';
 import { errorMessage } from '@/lib/api/errors';
 import { formatRelative } from '@/lib/format';
 import { useDebouncedValue } from '@/lib/use-debounced-value';

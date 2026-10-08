@@ -119,6 +119,32 @@ async function main(): Promise<void> {
     },
   });
 
+  // Stage F-J workflows: material requests are approved by the project manager; stock adjustments and counts by a
+  // warehouse manager (plus finance for large values). Warehouse transfers have no default workflow (optional).
+  const stockWorkflows: Array<{ documentType: string; name: string; rules: Array<{ min: number; max?: number; roles: string[] }> }> = [
+    { documentType: 'MATERIAL_REQUEST', name: 'Material Request', rules: [{ min: 0, max: 100000, roles: ['Project Manager'] }, { min: 100000.01, roles: ['Project Manager', 'Procurement'] }] },
+    { documentType: 'STOCK_ADJUSTMENT', name: 'Stock Adjustment', rules: [{ min: 0, max: 50000, roles: ['Warehouse Manager'] }, { min: 50000.01, roles: ['Warehouse Manager', 'Finance'] }] },
+    { documentType: 'STOCK_COUNT', name: 'Stock Count', rules: [{ min: 0, max: 50000, roles: ['Warehouse Manager'] }, { min: 50000.01, roles: ['Warehouse Manager', 'Finance'] }] },
+  ];
+  for (const w of stockWorkflows) {
+    await prisma.approvalWorkflow.upsert({
+      where: { companyId_documentType: { companyId: company.id, documentType: w.documentType } },
+      update: {},
+      create: {
+        companyId: company.id,
+        documentType: w.documentType,
+        name: w.name,
+        rules: {
+          create: w.rules.map((r) => ({
+            minAmount: r.min,
+            maxAmount: r.max ?? null,
+            steps: { create: r.roles.map((roleName, i) => ({ stepOrder: i + 1, roleName })) },
+          })),
+        },
+      },
+    });
+  }
+
   if (existingAdmin) console.log(`Seeded. Admin ${adminEmail} already existed; password unchanged.`);
   else if (supplied) console.log(`Seeded. Admin ${adminEmail} created with the password from SEED_ADMIN_PASSWORD (change required at first login).`);
   else console.log(`Seeded. Admin ${adminEmail} generated one-time password: ${password}  (change required at first login; shown once)`);

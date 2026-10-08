@@ -14,7 +14,9 @@ import {
   Public,
 } from '../../common/decorators/auth.decorators';
 import { AppConfig } from '../../config/config.service';
-import { AuthService, ClientMetaInfo, SESSION_COOKIE } from './auth.service';
+import { AuthService, ClientMetaInfo, SESSION_COOKIE } from './auth.service';import { Returns } from '../../common/decorators/api-docs';
+import { RevokeOthersDto, SessionInfoDto, SessionUserDto } from '../../common/dto/responses.dto';
+
 
 class LoginDto extends createZodDto(loginSchema) {}
 class ChangePasswordDto extends createZodDto(changePasswordSchema) {}
@@ -28,6 +30,7 @@ export class AuthController {
     private readonly config: AppConfig,
   ) {}
 
+  @Returns(SessionUserDto)
   @Public()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('login')
@@ -63,6 +66,7 @@ export class AuthController {
     res.clearCookie(SESSION_COOKIE, { path: '/' });
   }
 
+  @Returns(SessionUserDto)
   @Authenticated()
   @AllowPasswordChange()
   @Get('me')
@@ -93,6 +97,7 @@ export class AuthController {
     return this.auth.confirmPasswordReset(body.token, body.newPassword, meta);
   }
 
+  @Returns(SessionInfoDto, { array: true })
   @Authenticated()
   @Get('sessions')
   sessions(@CurrentUser() user: SessionUser, @CurrentSessionId() sessionId: string) {
@@ -106,6 +111,7 @@ export class AuthController {
     return this.auth.revokeSession(user, id);
   }
 
+  @Returns(RevokeOthersDto)
   @Authenticated()
   @Post('sessions/revoke-others')
   @HttpCode(200)

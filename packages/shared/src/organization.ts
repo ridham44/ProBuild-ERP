@@ -23,6 +23,8 @@ export const updateCompanySchema = z.object({
   phone: z.string().max(40).nullish(),
   vatStatus: z.enum(['VAT', 'NON_VAT', 'EXEMPT']),
   fiscalYearStartMonth: z.number().int().min(1).max(12),
+  /** Percent above the open PO quantity that an OVERRIDE-authorised receipt may reach (0 disables over-receipt). */
+  overReceiptTolerancePct: z.string().regex(/^\d{1,2}(\.\d{1,4})?$|^100$/, 'Must be a percentage between 0 and 100').optional(),
 }).partial();
 export type UpdateCompanyInput = z.infer<typeof updateCompanySchema>;
 

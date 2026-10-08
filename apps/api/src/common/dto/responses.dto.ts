@@ -47,6 +47,18 @@ import {
   wbsNodeResponseSchema,
   wbsRowSchema,
   budgetResponseSchema,
+  accountResponseSchema, approvalRequestBaseSchema, approvalRequestListRowSchema, approvalWorkflowResponseSchema, bankAccountResponseSchema,
+  branchResponseSchema, companyResponseSchema, costCenterResponseSchema, departmentResponseSchema, generalLedgerResponseSchema,
+  journalDetailResponseSchema, journalPageSchema, notificationPageSchema, passwordResetIssuedSchema, periodResponseSchema, revokeOthersResponseSchema,
+  roleAssignmentRowSchema, roleBaseSchema, roleResponseSchema, sessionResponseSchema, sessionUserResponseSchema, trialBalanceResponseSchema,
+  updatedCountSchema, userResponseSchema, warehouseListRowSchema, warehouseLocationResponseSchema, warehouseResponseSchema,
+} from '@probuild/shared';
+import {
+  adjustmentDetailResponseSchema, adjustmentListRowSchema, batchRowSchema, budgetVsActualResponseSchema, countDetailResponseSchema, countListRowSchema,
+  goodsReceiptDetailResponseSchema, goodsReceiptListRowSchema, materialIssueDetailResponseSchema, materialIssueListRowSchema,
+  materialRequestDetailResponseSchema, materialRequestListRowSchema, materialReturnDetailResponseSchema, materialReturnListRowSchema, movementRowSchema,
+  receivableLinesResponseSchema, reconciliationResponseSchema, serialRowSchema, stockBalanceRowSchema, transferDetailResponseSchema, transferListRowSchema,
+  valuationResponseSchema,
 } from '@probuild/shared';
 import { createZodDto } from 'nestjs-zod';
 
@@ -111,3 +123,61 @@ export class QuotationPageDto extends createZodDto(pageOf(quotationListRowSchema
 export class ComparisonDto extends createZodDto(comparisonResponseSchema) {}
 export class PurchaseOrderDetailDto extends createZodDto(purchaseOrderDetailResponseSchema) {}
 export class PurchaseOrderPageDto extends createZodDto(pageOf(purchaseOrderListRowSchema)) {}
+
+// ---- Foundation endpoints -------------------------------------------------------------------------
+
+export class SessionUserDto extends createZodDto(sessionUserResponseSchema) {}
+export class SessionInfoDto extends createZodDto(sessionResponseSchema) {}
+export class RevokeOthersDto extends createZodDto(revokeOthersResponseSchema) {}
+export class PasswordResetIssuedDto extends createZodDto(passwordResetIssuedSchema) {}
+export class UserDto extends createZodDto(userResponseSchema) {}
+export class RoleAssignmentDto extends createZodDto(roleAssignmentRowSchema) {}
+export class RoleBaseDto extends createZodDto(roleBaseSchema) {}
+export class RoleDto extends createZodDto(roleResponseSchema) {}
+export class ApprovalRequestDto extends createZodDto(approvalRequestBaseSchema) {}
+export class ApprovalRequestPageDto extends createZodDto(pageOf(approvalRequestListRowSchema)) {}
+export class ApprovalWorkflowDto extends createZodDto(approvalWorkflowResponseSchema) {}
+export class NotificationPageDto extends createZodDto(notificationPageSchema) {}
+export class UpdatedCountDto extends createZodDto(updatedCountSchema) {}
+export class CompanyDto extends createZodDto(companyResponseSchema) {}
+export class BranchDto extends createZodDto(branchResponseSchema) {}
+export class BranchPageDto extends createZodDto(pageOf(branchResponseSchema)) {}
+export class DepartmentDto extends createZodDto(departmentResponseSchema) {}
+export class DepartmentPageDto extends createZodDto(pageOf(departmentResponseSchema)) {}
+export class CostCenterDto extends createZodDto(costCenterResponseSchema) {}
+export class CostCenterPageDto extends createZodDto(pageOf(costCenterResponseSchema)) {}
+export class WarehouseDto extends createZodDto(warehouseResponseSchema) {}
+export class WarehousePageDto extends createZodDto(pageOf(warehouseListRowSchema)) {}
+export class WarehouseLocationDto extends createZodDto(warehouseLocationResponseSchema) {}
+export class BankAccountDto extends createZodDto(bankAccountResponseSchema) {}
+export class AccountDto extends createZodDto(accountResponseSchema) {}
+export class PeriodDto extends createZodDto(periodResponseSchema) {}
+export class JournalPageDto extends createZodDto(journalPageSchema) {}
+export class JournalDetailDto extends createZodDto(journalDetailResponseSchema) {}
+export class TrialBalanceDto extends createZodDto(trialBalanceResponseSchema) {}
+export class GeneralLedgerDto extends createZodDto(generalLedgerResponseSchema) {}
+
+// ---- Stages F-J: receiving, stock, materials --------------------------------------------------------
+
+export class GoodsReceiptDetailDto extends createZodDto(goodsReceiptDetailResponseSchema) {}
+export class GoodsReceiptPageDto extends createZodDto(pageOf(goodsReceiptListRowSchema)) {}
+export class ReceivableLinesDto extends createZodDto(receivableLinesResponseSchema) {}
+export class StockBalancePageDto extends createZodDto(pageOf(stockBalanceRowSchema)) {}
+export class ValuationDto extends createZodDto(valuationResponseSchema) {}
+export class MovementPageDto extends createZodDto(pageOf(movementRowSchema)) {}
+export class BatchPageDto extends createZodDto(pageOf(batchRowSchema)) {}
+export class SerialPageDto extends createZodDto(pageOf(serialRowSchema)) {}
+export class ReconciliationDto extends createZodDto(reconciliationResponseSchema) {}
+export class TransferDetailDto extends createZodDto(transferDetailResponseSchema) {}
+export class TransferPageDto extends createZodDto(pageOf(transferListRowSchema)) {}
+export class AdjustmentDetailDto extends createZodDto(adjustmentDetailResponseSchema) {}
+export class AdjustmentPageDto extends createZodDto(pageOf(adjustmentListRowSchema)) {}
+export class CountDetailDto extends createZodDto(countDetailResponseSchema) {}
+export class CountPageDto extends createZodDto(pageOf(countListRowSchema)) {}
+export class MaterialRequestDetailDto extends createZodDto(materialRequestDetailResponseSchema) {}
+export class MaterialRequestPageDto extends createZodDto(pageOf(materialRequestListRowSchema)) {}
+export class MaterialIssueDetailDto extends createZodDto(materialIssueDetailResponseSchema) {}
+export class MaterialIssuePageDto extends createZodDto(pageOf(materialIssueListRowSchema)) {}
+export class MaterialReturnDetailDto extends createZodDto(materialReturnDetailResponseSchema) {}
+export class MaterialReturnPageDto extends createZodDto(pageOf(materialReturnListRowSchema)) {}
+export class BudgetVsActualDto extends createZodDto(budgetVsActualResponseSchema) {}

@@ -1,6 +1,6 @@
 import type { Grant, SessionUser } from '@probuild/shared';
 import { describe, expect, it } from 'vitest';
-import type { ApprovalRequestDto } from '@/lib/api/contract';
+import type { ApprovalRequestDto } from '@/lib/api/types';
 import { buildApprovalSteps, getDecisionRights } from './model';
 
 const grant = (action: Grant['action']): Grant => ({
@@ -22,9 +22,26 @@ const actor = (
   ...overrides,
 });
 
+const action = (
+  overrides: Partial<ApprovalRequestDto['actions'][number]>,
+): ApprovalRequestDto['actions'][number] => ({
+  id: 'a',
+  requestId: 'r1',
+  stepOrder: 1,
+  approverId: 'approver',
+  approver: { id: 'approver', name: 'Ana Cruz' },
+  decision: 'APPROVED',
+  comment: null,
+  ip: null,
+  device: null,
+  createdAt: '2026-10-07T02:00:00Z',
+  ...overrides,
+});
+
 function request(overrides: Partial<ApprovalRequestDto> = {}): ApprovalRequestDto {
   return {
     id: 'r1',
+    companyId: 'c1',
     documentType: 'PURCHASE_ORDER',
     documentId: 'd1',
     documentNo: 'PO-1',
@@ -68,14 +85,7 @@ describe('getDecisionRights', () => {
   it('blocks a second action by someone who already acted', () => {
     const acted = request({
       actions: [
-        {
-          id: 'a',
-          stepOrder: 1,
-          approverId: 'approver',
-          decision: 'APPROVED',
-          comment: null,
-          createdAt: '2026-10-07T02:00:00Z',
-        },
+        action({}),
       ],
     });
     expect(getDecisionRights(acted, actor()).canApprove).toBe(false);
@@ -106,14 +116,7 @@ describe('buildApprovalSteps', () => {
       request({
         currentStep: 2,
         actions: [
-          {
-            id: 'a',
-            stepOrder: 1,
-            approverId: 'approver',
-            decision: 'APPROVED',
-            comment: 'Looks right',
-            createdAt: '2026-10-07T02:00:00Z',
-          },
+          action({ comment: 'Looks right' }),
         ],
       }),
       'approver',
@@ -127,18 +130,12 @@ describe('buildApprovalSteps', () => {
       request({
         status: 'REJECTED',
         actions: [
-          {
-            id: 'a',
-            stepOrder: 1,
-            approverId: 'x',
-            decision: 'REJECTED',
-            comment: null,
-            createdAt: '2026-10-07T02:00:00Z',
-          },
+          action({ approverId: 'x', approver: { id: 'x', name: 'Mara Lim' }, decision: 'REJECTED' }),
         ],
       }),
       'me',
     );
     expect(steps.map((step) => step.state)).toEqual(['rejected', 'skipped']);
+    expect(steps[0]?.approver).toBe('Mara Lim');
   });
 });
