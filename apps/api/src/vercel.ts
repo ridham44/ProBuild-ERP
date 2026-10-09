@@ -8,7 +8,7 @@ type RequestListener = (req: IncomingMessage, res: ServerResponse) => void;
 let server: Promise<RequestListener> | undefined;
 
 async function boot(): Promise<RequestListener> {
-  const app = await createApp();
+  const app = await createApp({ abortOnError: false });
   await app.init();
   return app.getHttpAdapter().getInstance() as RequestListener;
 }

@@ -34,8 +34,9 @@ function originGuard(allowed: string[]) {
   };
 }
 
-export async function createApp(): Promise<INestApplication> {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+/** abortOnError: false makes a startup failure throw instead of exiting the process (serverless callers must survive it). */
+export async function createApp(options: { abortOnError?: boolean } = {}): Promise<INestApplication> {
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, abortOnError: options.abortOnError ?? true });
   const config = app.get(AppConfig);
   app.useLogger(app.get(Logger));
 
