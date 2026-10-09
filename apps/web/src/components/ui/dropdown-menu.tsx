@@ -20,7 +20,7 @@ export const DropdownMenuContent = React.forwardRef<
         sideOffset={sideOffset}
         align={align}
         className={cn(
-          'z-50 min-w-44 overflow-hidden rounded-lg border border-border bg-surface-raised p-1 text-foreground shadow-pop data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
+          'z-50 min-w-44 overflow-hidden rounded-lg bg-surface-raised p-1 text-foreground shadow-pop duration-100 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.98] data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
           className,
         )}
         {...props}
@@ -37,8 +37,8 @@ export const DropdownMenuItem = React.forwardRef<
     <DropdownPrimitive.Item
       ref={ref}
       className={cn(
-        'relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-surface-muted data-[disabled]:opacity-50',
-        destructive && 'text-danger',
+        'relative flex cursor-pointer select-none items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[highlighted]:bg-surface-muted data-[disabled]:opacity-50',
+        destructive && 'text-danger data-[highlighted]:bg-danger-subtle',
         className,
       )}
       {...props}
@@ -54,7 +54,7 @@ export const DropdownMenuCheckboxItem = React.forwardRef<
     <DropdownPrimitive.CheckboxItem
       ref={ref}
       className={cn(
-        'relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-7 pr-2 text-sm outline-none data-[highlighted]:bg-surface-muted',
+        'relative flex cursor-pointer select-none items-center rounded-md py-1.5 pl-7 pr-2 text-sm outline-none data-[highlighted]:bg-surface-muted',
         className,
       )}
       {...props}
@@ -76,7 +76,7 @@ export const DropdownMenuLabel = React.forwardRef<
   return (
     <DropdownPrimitive.Label
       ref={ref}
-      className={cn('px-2 py-1 text-xs font-medium text-muted-foreground', className)}
+      className={cn('eyebrow px-2 pb-1 pt-1.5', className)}
       {...props}
     />
   );

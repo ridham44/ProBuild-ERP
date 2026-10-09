@@ -1,7 +1,7 @@
 'use client';
 
 import { MOVEMENT_TYPES, STOCK_STATUSES } from '@probuild/shared';
-import { History } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, History } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 import type { DataColumn } from '@/components/common/data-table/column-meta';
@@ -33,7 +33,7 @@ function ReferenceCell({ movement }: { movement: MovementRow }) {
   const label = movement.reference.number ?? titleCase(movement.reference.type);
   if (!href) return <span className="text-xs text-muted-foreground">{label}</span>;
   return (
-    <Link href={href} className="font-mono text-xs text-primary hover:underline">
+    <Link href={href} className="doc-link">
       {label}
     </Link>
   );
@@ -55,7 +55,7 @@ export function MovementsView() {
         cell: ({ row }) => (
           <div>
             <p>{formatDateTime(row.original.txnDate)}</p>
-            <p className="font-mono text-xs text-muted-foreground">{row.original.txnNo}</p>
+            <p className="font-mono text-xs text-subtle-foreground">{row.original.txnNo}</p>
           </div>
         ),
         meta: { sticky: true },
@@ -77,7 +77,22 @@ export function MovementsView() {
         ),
       },
       { id: 'warehouse', header: 'Warehouse', cell: ({ row }) => row.original.warehouse.name, meta: { hideBelow: 'md' } },
-      { id: 'type', header: 'Type', cell: ({ row }) => titleCase(row.original.txnType), meta: { hideBelow: 'sm' } },
+      {
+        id: 'type',
+        header: 'Type',
+        cell: ({ row }) => {
+          const inbound = row.original.direction === 'IN';
+          const Icon = inbound ? ArrowDownLeft : ArrowUpRight;
+          return (
+            <Badge tone={inbound ? 'success' : 'neutral'}>
+              <Icon className="size-3" aria-hidden />
+              {titleCase(row.original.txnType)}
+              <span className="sr-only">{inbound ? ' (in)' : ' (out)'}</span>
+            </Badge>
+          );
+        },
+        meta: { hideBelow: 'sm' },
+      },
       {
         id: 'status',
         header: 'Stock status',
@@ -93,7 +108,7 @@ export function MovementsView() {
         id: 'qty',
         header: 'Quantity',
         cell: ({ row }) => (
-          <span className={cn('font-medium', row.original.direction === 'OUT' ? 'text-danger' : 'text-success')}>
+          <span className={cn('font-semibold', row.original.direction === 'IN' ? 'text-success' : 'text-foreground')}>
             {row.original.direction === 'IN' ? '+' : ''}
             {formatQty(row.original.qty, row.original.item.baseUnit)}
           </span>

@@ -1,7 +1,7 @@
 'use client';
 
 import { newIdempotencyKey } from '@probuild/api-client';
-import { Ban, Copy, FilePlus2, Lock, Pencil, Send } from 'lucide-react';
+import { AlertTriangle, Ban, Copy, FilePlus2, Lock, Pencil, Send } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 import { ActivityPanel } from '@/components/common/activity-panel';
@@ -10,14 +10,16 @@ import type { DataColumn } from '@/components/common/data-table/column-meta';
 import { DataTable } from '@/components/common/data-table/data-table';
 import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
+import { DetailPageSkeleton } from '@/components/common/page-skeleton';
 import { PageHeader } from '@/components/common/page-header';
 import { DetailList, Panel } from '@/components/common/panel';
+import { PriorityBadge } from '@/components/common/priority-badge';
 import { ReasonDialog } from '@/components/common/reason-dialog';
 import { StatusBadge } from '@/components/common/status-badge';
+import { SummaryStrip } from '@/components/common/summary-strip';
 import { UrlTabs } from '@/components/common/url-tabs';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import {
   currentApproval,
@@ -36,8 +38,7 @@ import {
   useRequisitionActivity,
   useSubmitRequisition,
 } from '../api/hooks';
-import { prStatusKey } from '../model';
-import { PriorityBadge } from './requisitions-view';
+import { isRequisitionOverdue, prStatusKey } from '../model';
 
 const CANCELLABLE = ['DRAFT', 'SUBMITTED', 'APPROVED'];
 const CLOSABLE = ['APPROVED', 'PARTIALLY_ORDERED', 'ORDERED'];
@@ -158,7 +159,7 @@ function Sourcing({ pr, canCreateRfq }: { pr: RequisitionDetail; canCreateRfq: b
           <ul className="divide-y divide-border">
             {pr.rfqs.map((rfq) => (
               <li key={rfq.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                <Link href={`/procurement/rfqs/${rfq.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+                <Link href={`/procurement/rfqs/${rfq.id}`} className="doc-link">
                   {rfq.number}
                 </Link>
                 <StatusBadge status={rfq.status} />
@@ -175,7 +176,7 @@ function Sourcing({ pr, canCreateRfq }: { pr: RequisitionDetail; canCreateRfq: b
           <ul className="divide-y divide-border">
             {pr.purchaseOrders.map((po) => (
               <li key={po.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                <Link href={`/procurement/orders/${po.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+                <Link href={`/procurement/orders/${po.id}`} className="doc-link">
                   {po.number}
                 </Link>
                 <StatusBadge status={po.status} />
@@ -249,10 +250,7 @@ export function RequisitionDetailView({ id }: { id: string }) {
   return (
     <PermissionGate module="procurement.requisition">
       {requisition.isPending ? (
-        <div className="space-y-4" role="status" aria-label="Loading requisition">
-          <Skeleton className="h-7 w-72" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <DetailPageSkeleton label="Loading requisition" />
       ) : requisition.isError || !pr ? (
         <QueryErrorState error={requisition.error} onRetry={() => void requisition.refetch()} />
       ) : (
@@ -305,6 +303,26 @@ export function RequisitionDetailView({ id }: { id: string }) {
                 ) : null}
               </>
             }
+          />
+          <SummaryStrip
+            facts={[
+              { label: 'Project', value: <Link href={`/projects/${pr.projectId}`} className="hover:text-primary hover:underline">{pr.project.name}</Link>, hint: <span className="font-mono">{pr.project.code}</span> },
+              { label: 'Requester', value: pr.requester?.name },
+              {
+                label: 'Needed by',
+                value: isRequisitionOverdue(pr) ? (
+                  <span className="inline-flex items-center gap-1 text-danger">
+                    <AlertTriangle className="size-3.5" aria-hidden />
+                    {formatDate(pr.requiredDate)}
+                  </span>
+                ) : (
+                  formatDate(pr.requiredDate)
+                ),
+                ...(isRequisitionOverdue(pr) ? { hint: 'Past needed-by, not yet ordered' } : {}),
+              },
+              { label: 'Lines', value: pr.lines.length, numeric: true },
+              { label: 'Estimated total', value: formatPHP(pr.estimatedTotal), numeric: true, emphasis: true },
+            ]}
           />
           {waitingOnMe ? (
             <Alert

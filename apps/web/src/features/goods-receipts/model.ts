@@ -40,6 +40,16 @@ export const QC_RESULT_TONES: Record<GoodsReceiptLine['qcResult'], BadgeTone> = 
   PARTIAL: 'info',
 };
 
+/** Lines per QC outcome, in display order, leaving out outcomes no line has. Counts lines, never mixes units. */
+export function qcOutcomeCounts(
+  lines: Array<Pick<GoodsReceiptLine, 'qcResult'>>,
+): Array<{ result: GoodsReceiptLine['qcResult']; count: number }> {
+  const order: Array<GoodsReceiptLine['qcResult']> = ['ACCEPTED', 'PARTIAL', 'QUARANTINED', 'REJECTED', 'PENDING'];
+  return order
+    .map((result) => ({ result, count: lines.filter((line) => line.qcResult === result).length }))
+    .filter((entry) => entry.count > 0);
+}
+
 /** A posted line still holding quarantined stock that needs a QC decision. */
 export function needsQuarantineDecision(line: GoodsReceiptLine): boolean {
   return Number(line.quarantineOpenQty) > 0;

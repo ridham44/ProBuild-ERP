@@ -193,7 +193,7 @@ export function ProjectOverview({ project }: { project: ProjectDetail }) {
             href={stat.href ?? '#'}
             className="rounded-lg border border-border bg-surface px-4 py-3 transition-colors hover:border-border-strong hover:bg-surface-muted/50"
           >
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{stat.label}</p>
+            <p className="text-xs font-semibold text-muted-foreground">{stat.label}</p>
             {dashboard.isPending ? (
               <Skeleton className="mt-2 h-6 w-10" />
             ) : (

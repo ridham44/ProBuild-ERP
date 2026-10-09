@@ -1,12 +1,14 @@
 'use client';
 
 import type { ProjectStatusKey } from '@probuild/shared';
-import { ChevronDown, Pencil } from 'lucide-react';
+import { AlertTriangle, ChevronDown, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 import { ActivityPanel } from '@/components/common/activity-panel';
 import { QueryErrorState } from '@/components/common/error-state';
+import { DetailPageSkeleton } from '@/components/common/page-skeleton';
 import { PageHeader } from '@/components/common/page-header';
+import { SummaryStrip } from '@/components/common/summary-strip';
 import { Panel } from '@/components/common/panel';
 import { ReasonDialog } from '@/components/common/reason-dialog';
 import { StatusBadge } from '@/components/common/status-badge';
@@ -18,21 +20,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { useCan } from '@/features/auth/components/current-user';
 import { PermissionGate } from '@/features/auth/components/permission-gate';
 import { errorMessage } from '@/lib/api/errors';
 import type { ProjectDetail } from '@/lib/api/types';
-import { formatPHP } from '@/lib/format';
+import { formatDate, formatPHP } from '@/lib/format';
 import {
   useChangeProjectStatus,
   useProject,
   useProjectActivity,
   useProjectDashboard,
 } from '../api/hooks';
-import { allowedTransitions, transitionCopy } from '../model';
-import { ProgressBar } from './progress-bar';
+import { allowedTransitions, isProjectOverdue, projectTargetFinish, transitionCopy } from '../model';
+import { ProgressBar, projectProgressTone } from './progress-bar';
 import { ProjectBoq } from './project-boq';
 import { ProjectEditDrawer } from './project-edit-drawer';
 import { ProjectFinancial } from './project-financial';
@@ -45,31 +46,45 @@ import { ProjectWbs } from './project-wbs';
 function HeaderFacts({ project }: { project: ProjectDetail }) {
   const dashboard = useProjectDashboard(project.id);
   const contractValue = dashboard.data?.financial?.contractValue ?? project.contractAmount;
+  const overdue = isProjectOverdue(project);
   return (
-    <dl className="mb-5 grid gap-x-8 gap-y-3 rounded-lg border border-border bg-surface px-4 py-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-      <div>
-        <dt className="text-xs text-muted-foreground">Client</dt>
-        <dd className="mt-0.5 font-medium">
-          <Link href={`/customers/${project.customerId}`} className="hover:underline">
-            {project.customer.name}
-          </Link>
-        </dd>
-      </div>
-      <div>
-        <dt className="text-xs text-muted-foreground">Project manager</dt>
-        <dd className="mt-0.5 font-medium">{project.manager?.name ?? 'Unassigned'}</dd>
-      </div>
-      <div>
-        <dt className="text-xs text-muted-foreground">Contract value</dt>
-        <dd className="num mt-0.5 font-medium">{formatPHP(contractValue)}</dd>
-      </div>
-      <div>
-        <dt className="text-xs text-muted-foreground">Physical progress</dt>
-        <dd className="mt-1.5">
-          <ProgressBar value={project.progressPct} label="Project progress" />
-        </dd>
-      </div>
-    </dl>
+    <SummaryStrip
+      facts={[
+        {
+          label: 'Client',
+          value: (
+            <Link href={`/customers/${project.customerId}`} className="hover:text-primary hover:underline">
+              {project.customer.name}
+            </Link>
+          ),
+        },
+        { label: 'Project manager', value: project.manager?.name ?? 'Unassigned' },
+        {
+          label: 'Target finish',
+          value: overdue ? (
+            <span className="inline-flex items-center gap-1 text-danger">
+              <AlertTriangle className="size-3.5" aria-hidden />
+              {formatDate(projectTargetFinish(project))}
+            </span>
+          ) : (
+            formatDate(projectTargetFinish(project))
+          ),
+          ...(overdue ? { hint: 'Past target finish' } : {}),
+        },
+        { label: 'Contract value', value: formatPHP(contractValue), numeric: true, emphasis: true },
+        {
+          label: 'Physical progress',
+          value: (
+            <ProgressBar
+              value={project.progressPct}
+              label="Project progress"
+              tone={projectProgressTone(project)}
+              className="mt-1.5 min-w-36"
+            />
+          ),
+        },
+      ]}
+    />
   );
 }
 
@@ -110,11 +125,7 @@ export function ProjectWorkspaceView({ id }: { id: string }) {
   return (
     <PermissionGate module="projects.project">
       {project.isPending ? (
-        <div className="space-y-4" role="status" aria-label="Loading project">
-          <Skeleton className="h-7 w-72" />
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <DetailPageSkeleton label="Loading project" />
       ) : project.isError || !data ? (
         <QueryErrorState error={project.error} onRetry={() => void project.refetch()} />
       ) : (

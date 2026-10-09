@@ -5,6 +5,7 @@ import * as React from 'react';
 import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
 import { Panel } from '@/components/common/panel';
+import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/common/status-badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -81,33 +82,43 @@ function CostSummary({ projectId }: { projectId: string }) {
     >
       <div className="grid gap-3 sm:grid-cols-3">
         {figures.map((figure) => (
-          <div key={figure.label} className="rounded-lg border border-border bg-surface px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{figure.label}</p>
+          <div key={figure.label} className="rounded-lg bg-surface-muted px-4 py-3">
+            <p className="text-xs font-medium text-muted-foreground">{figure.label}</p>
             <p className="num mt-1 text-xl font-semibold leading-tight">{formatPHP(figure.value)}</p>
           </div>
         ))}
       </div>
       {lines.length > 0 ? (
-        <table className="mt-4 w-full text-sm">
-          <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
-              <th className="py-1 font-medium">Cost code</th>
-              <th className="py-1 text-right font-medium">Issued</th>
-              <th className="py-1 text-right font-medium">Returned</th>
-              <th className="py-1 text-right font-medium">Material actual cost</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {lines.map((line) => (
-              <tr key={line.costCode?.id ?? 'none'}>
-                <td className="py-1.5">{line.costCode ? `${line.costCode.code} ${line.costCode.name}` : 'No cost code'}</td>
-                <td className="num py-1.5 text-right">{formatPHP(line.issued)}</td>
-                <td className="num py-1.5 text-right">{formatPHP(line.returned)}</td>
-                <td className="num py-1.5 text-right font-medium">{formatPHP(line.actual)}</td>
+        <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+          <Table>
+            <TableHead>
+              <tr>
+                <TableHeaderCell>Cost code</TableHeaderCell>
+                <TableHeaderCell numeric>Issued</TableHeaderCell>
+                <TableHeaderCell numeric>Returned</TableHeaderCell>
+                <TableHeaderCell numeric>Material actual cost</TableHeaderCell>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </TableHead>
+            <TableBody>
+              {lines.map((line) => (
+                <TableRow key={line.costCode?.id ?? 'none'}>
+                  <TableCell>
+                    {line.costCode ? (
+                      <>
+                        <span className="font-mono text-xs text-muted-foreground">{line.costCode.code}</span> {line.costCode.name}
+                      </>
+                    ) : (
+                      <span className="text-subtle-foreground">No cost code</span>
+                    )}
+                  </TableCell>
+                  <TableCell numeric>{formatPHP(line.issued)}</TableCell>
+                  <TableCell numeric>{formatPHP(line.returned)}</TableCell>
+                  <TableCell numeric className="font-semibold">{formatPHP(line.actual)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       ) : null}
     </Panel>
   );
@@ -145,7 +156,7 @@ export function ProjectMaterials({ projectId }: { projectId: string }) {
             {(requests.data?.items ?? []).map((request) => (
               <li key={request.id} className="space-y-0.5 px-4 py-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <Link href={`/inventory/material-requests/${request.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+                  <Link href={`/inventory/material-requests/${request.id}`} className="doc-link">
                     {request.number}
                   </Link>
                   <StatusBadge status={documentStatusKey(request.status)} />
@@ -177,7 +188,7 @@ export function ProjectMaterials({ projectId }: { projectId: string }) {
             {(issues.data?.items ?? []).map((issue) => (
               <li key={issue.id} className="space-y-0.5 px-4 py-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <Link href={`/inventory/material-issues/${issue.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+                  <Link href={`/inventory/material-issues/${issue.id}`} className="doc-link">
                     {issue.number}
                   </Link>
                   <StatusBadge status={issue.status} />

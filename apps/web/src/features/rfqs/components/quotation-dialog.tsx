@@ -136,7 +136,7 @@ function Body({ rfq, supplierId, quotationId, onClose }: Omit<Props, 'open' | 'o
           {showErrors && errors.header.lines ? <p className="mb-1 text-xs font-medium text-danger">{errors.header.lines}</p> : null}
           <div className="overflow-x-auto rounded border border-border">
             <table className="w-full min-w-[44rem] text-sm">
-              <thead className="bg-surface-muted text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="bg-surface-muted text-left text-xs font-semibold text-muted-foreground">
                 <tr>
                   <th className="px-2 py-1.5 font-medium">Item</th>
                   <th className="w-28 px-2 py-1.5 text-right font-medium">Required</th>

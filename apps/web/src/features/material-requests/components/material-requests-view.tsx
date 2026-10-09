@@ -39,7 +39,7 @@ export function MaterialRequestsView() {
         id: 'number',
         header: 'Request',
         cell: ({ row }) => (
-          <Link href={`/inventory/material-requests/${row.original.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+          <Link href={`/inventory/material-requests/${row.original.id}`} className="doc-link">
             {row.original.number}
           </Link>
         ),

@@ -53,7 +53,7 @@ export function SuppliersView() {
         cell: ({ row }) => (
           <Link
             href={`/procurement/suppliers/${row.original.id}`}
-            className="font-mono text-xs font-medium text-primary hover:underline"
+            className="doc-link"
           >
             {row.original.code}
           </Link>

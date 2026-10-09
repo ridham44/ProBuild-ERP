@@ -3,10 +3,11 @@ import {
   availableGrnActions,
   blankInspection,
   buildInspectionBody,
+  qcOutcomeCounts,
   splitSerials,
+  type ReceiptLineDraft,
   validateInspection,
   validateReceiptLine,
-  type ReceiptLineDraft,
 } from './model';
 
 const all = { post: true, cancel: true, inspect: true };
@@ -74,5 +75,25 @@ describe('receipt line validation', () => {
     expect(validateReceiptLine({ ...draft, receivedQty: '2', serials: 'A1\nA1' }, rules).serials).toBeDefined();
     expect(validateReceiptLine({ ...draft, receivedQty: '2', serials: 'A1, A2' }, rules)).toEqual({});
     expect(splitSerials('A1, A2\n A3 ')).toEqual(['A1', 'A2', 'A3']);
+  });
+});
+
+describe('qcOutcomeCounts', () => {
+  it('counts lines per outcome in a fixed order and drops empty outcomes', () => {
+    const lines = [
+      { qcResult: 'QUARANTINED' as const },
+      { qcResult: 'ACCEPTED' as const },
+      { qcResult: 'ACCEPTED' as const },
+      { qcResult: 'PENDING' as const },
+    ];
+    expect(qcOutcomeCounts(lines)).toEqual([
+      { result: 'ACCEPTED', count: 2 },
+      { result: 'QUARANTINED', count: 1 },
+      { result: 'PENDING', count: 1 },
+    ]);
+  });
+
+  it('returns nothing for a receipt without lines', () => {
+    expect(qcOutcomeCounts([])).toEqual([]);
   });
 });

@@ -92,7 +92,7 @@ export function ProjectProcurement({ projectId }: { projectId: string }) {
         {(requisitions.data?.items ?? []).map((pr) => (
           <li key={pr.id} className="space-y-0.5 px-4 py-2 text-sm">
             <div className="flex items-center gap-2">
-              <Link href={`/procurement/requests/${pr.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+              <Link href={`/procurement/requests/${pr.id}`} className="doc-link">
                 {pr.number}
               </Link>
               <StatusBadge status={prStatusKey(pr.status)} />
@@ -114,7 +114,7 @@ export function ProjectProcurement({ projectId }: { projectId: string }) {
           {(rfqs.data?.items ?? []).map((rfq) => (
             <li key={rfq.id} className="space-y-0.5 px-4 py-2 text-sm">
               <div className="flex items-center gap-2">
-                <Link href={`/procurement/rfqs/${rfq.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+                <Link href={`/procurement/rfqs/${rfq.id}`} className="doc-link">
                   {rfq.number}
                 </Link>
                 <StatusBadge status={rfq.status} />
@@ -138,7 +138,7 @@ export function ProjectProcurement({ projectId }: { projectId: string }) {
           {(orders.data?.items ?? []).map((po) => (
             <li key={po.id} className="space-y-0.5 px-4 py-2 text-sm">
               <div className="flex items-center gap-2">
-                <Link href={`/procurement/orders/${po.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+                <Link href={`/procurement/orders/${po.id}`} className="doc-link">
                   {po.number}
                 </Link>
                 <StatusBadge status={po.status} />

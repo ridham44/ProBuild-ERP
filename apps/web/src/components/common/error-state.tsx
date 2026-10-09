@@ -83,28 +83,29 @@ export function ErrorState({
   const Icon = copy.icon;
   const tone =
     kind === 'forbidden' || kind === 'not-found' || kind === 'session-expired'
-      ? 'text-muted-foreground'
-      : 'text-danger';
+      ? 'bg-surface text-subtle-foreground ring-border'
+      : 'bg-danger-subtle text-danger ring-danger-border';
   return (
     <div
       role="alert"
       className={cn(
         'flex flex-col items-center justify-center text-center',
-        compact ? 'gap-1.5 px-4 py-8' : 'gap-2 px-6 py-14',
+        compact ? 'gap-1.5 px-4 py-8' : 'gap-2 px-6 py-16',
         className,
       )}
     >
       <span
         className={cn(
-          'flex size-9 items-center justify-center rounded-lg border border-border bg-surface-muted',
+          'flex items-center justify-center rounded-xl shadow-card ring-1',
+          compact ? 'size-10' : 'mb-1 size-12',
           tone,
         )}
       >
-        <Icon className="size-[18px]" aria-hidden />
+        <Icon className={compact ? 'size-[18px]' : 'size-5'} strokeWidth={1.75} aria-hidden />
       </span>
       <h3 className="mt-1 text-base font-semibold">{title ?? copy.title}</h3>
       <p className="max-w-md text-sm text-muted-foreground">{description ?? copy.description}</p>
-      <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
         {kind === 'session-expired' ? (
           <Button asChild variant="primary">
             <Link href="/login">Sign in</Link>

@@ -65,7 +65,7 @@ export function Toaster() {
         return (
           <div
             key={item.id}
-            className="pointer-events-auto flex w-full max-w-sm items-start gap-2.5 rounded-lg border border-border bg-surface-raised px-3 py-2.5 shadow-pop animate-in fade-in-0 slide-in-from-bottom-2"
+            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg bg-surface-raised px-3.5 py-3 shadow-pop animate-in fade-in-0 slide-in-from-bottom-2"
             role={item.tone === 'error' ? 'alert' : 'status'}
           >
             <Icon className={cn('mt-0.5 size-4 shrink-0', accents[item.tone])} aria-hidden />

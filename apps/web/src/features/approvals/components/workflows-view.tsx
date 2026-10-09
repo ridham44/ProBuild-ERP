@@ -35,12 +35,12 @@ function WorkflowCard({
 }) {
   return (
     <section
-      className="overflow-hidden rounded-lg border border-border bg-surface"
+      className="overflow-hidden rounded-xl border border-border bg-surface shadow-card"
       aria-label={`${documentTypeLabel(workflow.documentType)} workflow`}
     >
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-base font-semibold">{documentTypeLabel(workflow.documentType)}</h2>
+          <h2 className="text-base font-semibold tracking-tight">{documentTypeLabel(workflow.documentType)}</h2>
           <StatusBadge status={workflow.active ? 'ACTIVE' : 'INACTIVE'} />
           <span className="text-sm text-muted-foreground">{workflow.name}</span>
         </div>
@@ -77,8 +77,8 @@ function WorkflowCard({
                         {index > 0 ? (
                           <ArrowRight className="size-3 text-subtle-foreground" aria-hidden />
                         ) : null}
-                        <span className="rounded-sm border border-border bg-surface-muted px-1.5 py-0.5 text-xs font-medium">
-                          <span className="num mr-1 text-muted-foreground">{index + 1}</span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-border bg-primary-subtle py-0.5 pl-0.5 pr-2 text-xs font-medium text-foreground">
+                          <span className="num flex size-4 items-center justify-center rounded-full bg-primary text-2xs text-primary-foreground">{index + 1}</span>
                           {step.roleName}
                         </span>
                       </li>

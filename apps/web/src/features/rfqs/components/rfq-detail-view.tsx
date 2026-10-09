@@ -8,6 +8,7 @@ import { ActivityPanel } from '@/components/common/activity-panel';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
+import { DetailPageSkeleton } from '@/components/common/page-skeleton';
 import { PageHeader } from '@/components/common/page-header';
 import { DetailList, Panel } from '@/components/common/panel';
 import { ReasonDialog } from '@/components/common/reason-dialog';
@@ -46,7 +47,7 @@ function Overview({ rfq }: { rfq: RfqDetail }) {
             columns={2}
             items={[
               { label: 'Project', value: <Link href={`/projects/${rfq.projectId}`} className="text-primary hover:underline">{rfq.project.code} · {rfq.project.name}</Link> },
-              { label: 'Requisition', value: rfq.requisition ? <Link href={`/procurement/requests/${rfq.requisition.id}`} className="font-mono text-xs text-primary hover:underline">{rfq.requisition.number}</Link> : null },
+              { label: 'Requisition', value: rfq.requisition ? <Link href={`/procurement/requests/${rfq.requisition.id}`} className="doc-link">{rfq.requisition.number}</Link> : null },
               { label: 'Quotations due', value: formatDate(rfq.dueDate) },
               { label: 'Goods needed by', value: formatDate(rfq.requiredDate) },
               { label: 'Delivery location', value: rfq.deliveryLocation, wide: true },
@@ -71,7 +72,7 @@ function Overview({ rfq }: { rfq: RfqDetail }) {
       </div>
       <Panel title="Items" bodyClassName="p-0">
         <table className="w-full text-sm">
-          <thead className="bg-surface-muted text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <thead className="bg-surface-muted text-left text-xs font-semibold text-muted-foreground">
             <tr>
               <th className="px-4 py-2 font-medium">#</th>
               <th className="px-2 py-2 font-medium">Item</th>
@@ -116,7 +117,7 @@ function Suppliers({
     >
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-surface-muted text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <thead className="bg-surface-muted text-left text-xs font-semibold text-muted-foreground">
             <tr>
               <th className="px-4 py-2 font-medium">Supplier</th>
               <th className="px-2 py-2 font-medium">Invitation</th>
@@ -264,10 +265,7 @@ export function RfqDetailView({ id }: { id: string }) {
   return (
     <PermissionGate module="procurement.rfq">
       {query.isPending ? (
-        <div className="space-y-4" role="status" aria-label="Loading RFQ">
-          <Skeleton className="h-7 w-72" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <DetailPageSkeleton label="Loading RFQ" />
       ) : query.isError || !rfq ? (
         <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
       ) : (

@@ -1,6 +1,6 @@
 'use client';
 
-import { Boxes } from 'lucide-react';
+import { AlertTriangle, Boxes } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 import type { DataColumn } from '@/components/common/data-table/column-meta';
@@ -8,6 +8,7 @@ import { DataTable } from '@/components/common/data-table/data-table';
 import { EmptyState } from '@/components/common/empty-state';
 import { EntityCombobox } from '@/components/common/entity-combobox';
 import { FilterBar } from '@/components/common/filter-bar';
+import { StackedBar } from '@/components/common/meter';
 import { PageHeader } from '@/components/common/page-header';
 import { SearchInput } from '@/components/common/search-input';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +24,54 @@ import { useStockBalances } from '../api/hooks';
 const INITIAL = { warehouseId: '', belowMinimum: '', hideEmpty: 'true' } as Record<string, string>;
 
 function qtyCell(value: string, unit: string) {
-  return <span className={Number(value) === 0 ? 'text-muted-foreground' : undefined}>{formatQty(value, unit)}</span>;
+  return <span className={Number(value) === 0 ? 'text-subtle-foreground' : undefined}>{formatQty(value, unit)}</span>;
+}
+
+/** On hand split into what is free to issue and what approved material requests have reserved. */
+function Availability({ row }: { row: StockBalanceRow }) {
+  const onHand = Number(row.onHand);
+  const reserved = Number(row.reserved);
+  const available = Number(row.available);
+  const overReserved = available < 0;
+  return (
+    <div className="ml-auto w-36 space-y-1">
+      <p className={overReserved ? 'font-semibold text-danger' : 'font-semibold'}>
+        {formatQty(row.available, row.baseUnit)}
+      </p>
+      {onHand > 0 || reserved > 0 ? (
+        <StackedBar
+          label={`${row.name} at ${row.warehouseName}`}
+          total={Math.max(onHand, reserved)}
+          segments={[
+            { label: 'Free', value: Math.max(available, 0), tone: 'accent' },
+            { label: 'Reserved', value: Math.min(reserved, onHand), tone: 'pending' },
+            ...(overReserved ? [{ label: 'Over-reserved', value: -available, tone: 'danger' as const }] : []),
+          ]}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+const LEGEND: Array<{ term: string; meaning: string; dot?: string }> = [
+  { term: 'On hand', meaning: 'usable stock in the warehouse' },
+  { term: 'Reserved', meaning: 'approved material requests not yet issued', dot: 'bg-pending' },
+  { term: 'Available', meaning: 'on hand minus reserved', dot: 'bg-accent' },
+  { term: 'On order', meaning: 'open purchase orders, not yet received' },
+];
+
+function QuantityLegend() {
+  return (
+    <dl className="mb-4 flex flex-wrap gap-x-5 gap-y-1.5 rounded-lg bg-surface-sunken/60 px-4 py-2.5 text-xs text-muted-foreground">
+      {LEGEND.map((entry) => (
+        <div key={entry.term} className="flex items-center gap-1.5">
+          {entry.dot ? <span className={`size-2 rounded-full ${entry.dot}`} aria-hidden /> : null}
+          <dt className="font-semibold text-foreground">{entry.term}</dt>
+          <dd>{entry.meaning}</dd>
+        </div>
+      ))}
+    </dl>
+  );
 }
 
 export function StockView() {
@@ -39,7 +87,7 @@ export function StockView() {
         header: 'Item',
         cell: ({ row }) => (
           <div className="min-w-0">
-            <Link href={`/inventory/items/${row.original.itemId}`} className="font-medium hover:underline">
+            <Link href={`/inventory/items/${row.original.itemId}`} className="block max-w-64 truncate font-medium hover:text-primary hover:underline">
               {row.original.name}
             </Link>
             <p className="font-mono text-xs text-muted-foreground">{row.original.sku}</p>
@@ -51,9 +99,12 @@ export function StockView() {
         id: 'warehouse',
         header: 'Warehouse',
         cell: ({ row }) => (
-          <Link href={`/inventory/warehouses/${row.original.warehouseId}`} className="hover:underline">
-            {row.original.warehouseName}
-          </Link>
+          <div>
+            <Link href={`/inventory/warehouses/${row.original.warehouseId}`} className="hover:text-primary hover:underline">
+              {row.original.warehouseName}
+            </Link>
+            <p className="font-mono text-xs text-subtle-foreground">{row.original.warehouseCode}</p>
+          </div>
         ),
         meta: { hideBelow: 'sm' },
       },
@@ -62,20 +113,28 @@ export function StockView() {
       {
         id: 'available',
         header: 'Available',
-        cell: ({ row }) => <span className="font-medium">{formatQty(row.original.available, row.original.baseUnit)}</span>,
+        cell: ({ row }) => <Availability row={row.original} />,
         meta: { numeric: true },
       },
       { id: 'quarantine', header: 'Quarantine', cell: ({ row }) => qtyCell(row.original.quarantine, row.original.baseUnit), meta: { numeric: true, hideBelow: 'lg' } },
       { id: 'damaged', header: 'Damaged', cell: ({ row }) => qtyCell(row.original.damaged, row.original.baseUnit), meta: { numeric: true, hideBelow: 'lg' } },
       { id: 'committed', header: 'On order', cell: ({ row }) => qtyCell(row.original.committed, row.original.baseUnit), meta: { numeric: true, hideBelow: 'lg' } },
+      { id: 'inTransit', header: 'In transit', cell: ({ row }) => qtyCell(row.original.inTransit, row.original.baseUnit), meta: { numeric: true, hideBelow: 'lg' } },
       {
         id: 'level',
         header: 'Level',
         cell: ({ row }) =>
           row.original.belowMinimum ? (
-            <Badge tone="warning">Below minimum {formatQty(row.original.minStock)}</Badge>
+            <Badge tone="warning">
+              <AlertTriangle className="size-3" aria-hidden />
+              Below min. <span className="num">{formatQty(row.original.minStock)}</span>
+            </Badge>
+          ) : Number(row.original.minStock) > 0 ? (
+            <span className="text-xs text-subtle-foreground">
+              Min. <span className="num">{formatQty(row.original.minStock)}</span>
+            </span>
           ) : (
-            <span className="text-muted-foreground">—</span>
+            <span className="text-subtle-foreground">—</span>
           ),
         meta: { hideBelow: 'md' },
       },
@@ -90,7 +149,7 @@ export function StockView() {
     <PermissionGate module="inventory.stock">
       <PageHeader
         title="Stock on hand"
-        description="Quantity and value of every item by warehouse. On hand is available stock; quarantine and damaged stock are shown beside it."
+        description="Quantity and value of every item by warehouse, in base units. Quarantined and damaged stock is held apart from on hand; value covers all of it."
         breadcrumbs={[{ label: 'Inventory' }, { label: 'Stock' }]}
         actions={
           <Button asChild>
@@ -98,8 +157,10 @@ export function StockView() {
           </Button>
         }
       />
+      <QuantityLegend />
       <DataTable
         caption="Stock on hand"
+        initialVisibility={{ inTransit: false }}
         columns={columns}
         data={page?.items ?? []}
         getRowId={(row) => `${row.itemId}:${row.warehouseId}`}

@@ -7,6 +7,7 @@ import { ActivityPanel } from '@/components/common/activity-panel';
 import { ContactsPanel } from '@/components/common/contacts-panel';
 import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
+import { DetailPageSkeleton } from '@/components/common/page-skeleton';
 import { PageHeader } from '@/components/common/page-header';
 import { DetailList, Panel } from '@/components/common/panel';
 import { StatusBadge } from '@/components/common/status-badge';
@@ -109,10 +110,7 @@ export function CustomerDetailView({ id }: { id: string }) {
   return (
     <PermissionGate module="parties.customer">
       {customer.isPending ? (
-        <div className="space-y-4" role="status" aria-label="Loading customer">
-          <Skeleton className="h-7 w-64" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <DetailPageSkeleton label="Loading customer" />
       ) : customer.isError || !data ? (
         <QueryErrorState error={customer.error} onRetry={() => void customer.refetch()} />
       ) : (

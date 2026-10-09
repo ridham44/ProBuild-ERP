@@ -104,7 +104,7 @@ export function ApprovalTimeline({
                 </p>
               ) : null}
               {step.comment ? (
-                <p className="mt-1 rounded border border-border bg-surface-muted px-2 py-1 text-sm">
+                <p className="mt-1.5 rounded-md border-l-2 border-border-strong bg-surface-muted px-3 py-1.5 text-sm text-muted-foreground">
                   {step.comment}
                 </p>
               ) : null}

@@ -5,6 +5,7 @@ import {
   formatPHP,
   formatQty,
   formatRelative,
+  isBeforeManilaToday,
   manilaToday,
   titleCase,
 } from './format';
@@ -88,5 +89,25 @@ describe('formatRelative', () => {
 describe('titleCase', () => {
   it('converts enum values to readable labels', () => {
     expect(titleCase('PENDING_APPROVAL')).toBe('Pending Approval');
+  });
+});
+
+describe('isBeforeManilaToday', () => {
+  // 09 Oct 2026, 10:00 in Manila.
+  const now = new Date('2026-10-09T02:00:00Z');
+
+  it('is true for an earlier Manila day and false for today or later', () => {
+    expect(isBeforeManilaToday('2026-10-08T00:00:00Z', now)).toBe(true);
+    expect(isBeforeManilaToday('2026-10-09T00:00:00Z', now)).toBe(false);
+    expect(isBeforeManilaToday('2026-10-10T00:00:00Z', now)).toBe(false);
+  });
+
+  it('uses the Manila calendar, not UTC', () => {
+    // 08 Oct 17:00 UTC is already 09 Oct in Manila, so it is due today, not late.
+    expect(isBeforeManilaToday('2026-10-08T17:00:00Z', now)).toBe(false);
+  });
+
+  it('treats a missing date as not late', () => {
+    expect(isBeforeManilaToday(null, now)).toBe(false);
   });
 });

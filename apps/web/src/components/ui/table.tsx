@@ -20,14 +20,14 @@ export function TableHead({ className, ...props }: React.HTMLAttributes<HTMLTabl
 }
 
 export function TableBody({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={className} {...props} />;
+  return <tbody className={cn('[&>tr:last-child>td]:border-b-0', className)} {...props} />;
 }
 
 export function TableRow({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
       className={cn(
-        'group/row hover:bg-surface-muted/60 data-[state=selected]:bg-primary-subtle',
+        'group/row transition-colors hover:bg-surface-muted data-[state=selected]:bg-primary-subtle',
         className,
       )}
       {...props}
@@ -43,7 +43,7 @@ export function TableHeaderCell({
   return (
     <th
       className={cn(
-        'whitespace-nowrap border-b border-border px-3 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground',
+        'whitespace-nowrap border-b border-border px-3 py-2.5 text-xs font-semibold text-muted-foreground first:pl-4 last:pr-4',
         numeric ? 'text-right' : 'text-left',
         className,
       )}
@@ -60,7 +60,7 @@ export function TableCell({
   return (
     <td
       className={cn(
-        'border-b border-border px-3 py-2 align-middle',
+        'border-b border-border/70 px-3 py-2.5 align-middle first:pl-4 last:pr-4',
         numeric && 'num text-right',
         className,
       )}

@@ -34,7 +34,7 @@ export function QuotationsView() {
         enableSorting: true,
         meta: { sticky: true },
         cell: ({ row }) => (
-          <Link href={`/procurement/rfqs/${row.original.rfqId}?tab=comparison`} className="font-mono text-xs font-medium text-primary hover:underline">
+          <Link href={`/procurement/rfqs/${row.original.rfqId}?tab=comparison`} className="doc-link">
             {row.original.rfq.number}
           </Link>
         ),

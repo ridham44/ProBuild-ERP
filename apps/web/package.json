@@ -8,7 +8,8 @@
     "start": "next start -p 3000",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "screenshots:marketing": "node scripts/capture-marketing-screenshots.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",

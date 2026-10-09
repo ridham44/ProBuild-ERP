@@ -41,7 +41,7 @@ export function GoodsReceiptsView() {
         id: 'number',
         header: 'Receipt',
         cell: ({ row }) => (
-          <Link href={`/inventory/receipts/${row.original.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+          <Link href={`/inventory/receipts/${row.original.id}`} className="doc-link">
             {row.original.number}
           </Link>
         ),
@@ -54,7 +54,7 @@ export function GoodsReceiptsView() {
           <div className="min-w-0">
             <p className="font-medium">{row.original.supplier.name}</p>
             <p className="text-xs text-muted-foreground">
-              <Link href={`/procurement/orders/${row.original.orderId}`} className="font-mono hover:underline">
+              <Link href={`/procurement/orders/${row.original.orderId}`} className="doc-link">
                 {row.original.order.number}
               </Link>
               {row.original.supplierDrNo ? ` · DR ${row.original.supplierDrNo}` : ''}

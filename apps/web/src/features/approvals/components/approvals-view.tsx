@@ -64,7 +64,7 @@ export function ApprovalsView() {
             {documentHref(row.original.documentType, row.original.documentId) ? (
               <Link
                 href={documentHref(row.original.documentType, row.original.documentId) ?? '#'}
-                className="font-mono text-xs font-medium text-primary hover:underline"
+                className="doc-link"
               >
                 {row.original.documentNo ?? 'Open'}
               </Link>

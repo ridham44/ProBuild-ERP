@@ -33,7 +33,7 @@ function RoleList({
 }) {
   return (
     <ul
-      className="scroll-thin max-h-[calc(100vh-14rem)] divide-y divide-border overflow-y-auto rounded-lg border border-border bg-surface"
+      className="scroll-thin max-h-[calc(100vh-14rem)] divide-y divide-border/70 overflow-y-auto rounded-xl border border-border bg-surface shadow-card"
       aria-label="Roles"
     >
       {roles.map((role) => (
@@ -43,8 +43,9 @@ function RoleList({
             onClick={() => onSelect(role.id)}
             aria-current={role.id === selectedId ? 'true' : undefined}
             className={cn(
-              'flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-surface-muted/60',
-              role.id === selectedId && 'bg-primary-subtle',
+              'relative flex w-full items-center gap-2 px-4 py-2.5 text-left outline-none transition-colors hover:bg-surface-muted focus-visible:bg-surface-muted',
+              role.id === selectedId &&
+                'bg-primary-subtle before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-r-full before:bg-primary hover:bg-primary-subtle',
             )}
           >
             <span className="min-w-0 flex-1">

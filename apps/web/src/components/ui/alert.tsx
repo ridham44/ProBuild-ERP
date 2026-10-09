@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, Info, OctagonAlert } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-const alertVariants = cva('flex gap-2.5 rounded border px-3 py-2.5 text-sm', {
+const alertVariants = cva('flex gap-3 rounded-lg border px-3.5 py-3 text-sm', {
   variants: {
     tone: {
       info: 'border-info-border bg-info-subtle text-foreground [&_svg]:text-info',

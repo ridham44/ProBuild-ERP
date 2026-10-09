@@ -121,8 +121,8 @@ export function CommandPalette({
         <DialogDescription className="sr-only">
           Search pages and records. Use arrow keys to move and Enter to open.
         </DialogDescription>
-        <div className="flex items-center gap-2 border-b border-border px-3">
-          <Search className="size-4 text-muted-foreground" aria-hidden />
+        <div className="flex items-center gap-2.5 border-b border-border px-4">
+          <Search className="size-4 text-primary" aria-hidden />
           <input
             autoFocus
             role="combobox"
@@ -132,7 +132,7 @@ export function CommandPalette({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search pages and records"
-            className="h-11 flex-1 bg-transparent text-base outline-none placeholder:text-subtle-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="h-12 flex-1 bg-transparent text-lg outline-none placeholder:text-subtle-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
             aria-label="Search"
           />
           {loading ? (
@@ -146,15 +146,20 @@ export function CommandPalette({
           className="scroll-thin max-h-[50vh] overflow-y-auto p-1.5"
         >
           {flat.length === 0 ? (
-            <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-              {query.trim()
-                ? 'Nothing matches that search.'
-                : 'Start typing to find a page or record.'}
-            </p>
+            <div className="px-3 py-10 text-center">
+              <p className="text-sm font-medium">
+                {query.trim() ? 'Nothing matches that search' : 'Jump anywhere in ProBuild'}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {query.trim()
+                  ? 'Try a document number, project code, item SKU or page name.'
+                  : 'Type a page name, document number, project code or item SKU.'}
+              </p>
+            </div>
           ) : (
             groups.map((group) => (
               <div key={group.id} role="group" aria-label={group.label} className="mb-1">
-                <p className="px-2 py-1 text-xs font-medium text-muted-foreground">{group.label}</p>
+                <p className="eyebrow px-2 pb-1 pt-2">{group.label}</p>
                 {group.items.map((result) => {
                   runningIndex += 1;
                   const index = runningIndex;
@@ -168,13 +173,21 @@ export function CommandPalette({
                       onMouseMove={() => setActive(index)}
                       onClick={() => go(result)}
                       className={cn(
-                        'flex cursor-pointer items-center gap-2.5 rounded px-2 py-1.5 text-sm',
-                        index === active && 'bg-surface-muted',
+                        'flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm',
+                        index === active && 'bg-primary-subtle text-foreground',
                       )}
                     >
-                      {Icon ? (
-                        <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                      ) : null}
+                      <span
+                        className={cn(
+                          'flex size-7 shrink-0 items-center justify-center rounded-md border',
+                          index === active
+                            ? 'border-primary-border bg-surface text-primary'
+                            : 'border-border bg-surface-muted text-muted-foreground',
+                        )}
+                        aria-hidden
+                      >
+                        {Icon ? <Icon className="size-3.5" strokeWidth={1.75} /> : null}
+                      </span>
                       <span className="min-w-0 flex-1 truncate">{result.title}</span>
                       {result.subtitle ? (
                         <span className="truncate text-xs text-muted-foreground">
@@ -182,7 +195,7 @@ export function CommandPalette({
                         </span>
                       ) : null}
                       {index === active ? (
-                        <CornerDownLeft className="size-3.5 text-muted-foreground" aria-hidden />
+                        <CornerDownLeft className="size-3.5 text-primary" aria-hidden />
                       ) : null}
                     </div>
                   );
@@ -191,7 +204,7 @@ export function CommandPalette({
             ))
           )}
         </div>
-        <div className="flex items-center gap-3 border-t border-border bg-surface-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-4 border-t border-border bg-surface-muted px-4 py-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <Kbd>↑</Kbd>
             <Kbd>↓</Kbd> move

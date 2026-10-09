@@ -271,7 +271,7 @@ export function ProjectWbs({ project }: { project: ProjectDetail }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm" aria-label="WBS tree">
             <thead>
-              <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <tr className="border-b border-border text-left text-xs font-semibold text-muted-foreground">
                 <th className="px-4 py-2 font-medium">Node</th>
                 <th className="px-3 py-2 text-right font-medium">Weight</th>
                 <th className="hidden px-3 py-2 font-medium sm:table-cell">Progress</th>

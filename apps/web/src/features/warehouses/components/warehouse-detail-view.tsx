@@ -11,6 +11,7 @@ import { DataTable } from '@/components/common/data-table/data-table';
 import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
 import { SelectField, TextField } from '@/components/common/form-controls';
+import { DetailPageSkeleton } from '@/components/common/page-skeleton';
 import { PageHeader } from '@/components/common/page-header';
 import { DetailList, Panel } from '@/components/common/panel';
 import { useCursorPagination } from '@/components/common/pagination';
@@ -91,7 +92,7 @@ function Overview({ warehouse }: { warehouse: WarehouseDetail }) {
             ) : (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr className="border-b border-border text-xs font-semibold text-muted-foreground">
                     <th className="py-1.5 text-left font-medium">Stock status</th>
                     <th className="py-1.5 text-right font-medium">Quantity</th>
                     <th className="py-1.5 text-right font-medium">Value</th>
@@ -399,10 +400,7 @@ export function WarehouseDetailView({ id }: { id: string }) {
   return (
     <PermissionGate module="organization.warehouse">
       {warehouse.isPending ? (
-        <div className="space-y-4" role="status" aria-label="Loading warehouse">
-          <Skeleton className="h-7 w-64" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <DetailPageSkeleton label="Loading warehouse" />
       ) : warehouse.isError || !data ? (
         <QueryErrorState error={warehouse.error} onRetry={() => void warehouse.refetch()} />
       ) : (

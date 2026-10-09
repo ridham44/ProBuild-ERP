@@ -18,7 +18,7 @@ const Overlay = React.forwardRef<
     <DialogPrimitive.Overlay
       ref={ref}
       className={cn(
-        'fixed inset-0 z-50 bg-foreground/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
+        'fixed inset-0 z-50 bg-sidebar/45 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
         className,
       )}
       {...props}
@@ -48,7 +48,7 @@ export const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          'fixed left-1/2 top-[8vh] z-50 flex max-h-[84vh] w-[calc(100%-2rem)] -translate-x-1/2 flex-col rounded-lg border border-border bg-surface-raised shadow-pop data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
+          'fixed left-1/2 top-[8vh] z-50 flex max-h-[84vh] w-[calc(100%-2rem)] -translate-x-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-pop duration-150 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.98] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[0.98]',
           dialogSize({ size }),
           className,
         )}
@@ -57,7 +57,7 @@ export const DialogContent = React.forwardRef<
         {children}
         {hideClose ? null : (
           <DialogPrimitive.Close
-            className="absolute right-3 top-3 rounded p-1 text-muted-foreground hover:bg-surface-muted hover:text-foreground"
+            className="absolute right-3 top-3 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground"
             aria-label="Close"
           >
             <X className="size-4" aria-hidden />
@@ -71,7 +71,7 @@ export const DialogContent = React.forwardRef<
 export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('flex flex-col gap-1 border-b border-border px-4 py-3 pr-10', className)}
+      className={cn('flex flex-col gap-1 border-b border-border px-5 py-4 pr-12', className)}
       {...props}
     />
   );
@@ -79,7 +79,7 @@ export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLD
 
 export function DialogBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('scroll-thin flex-1 overflow-y-auto px-4 py-3', className)} {...props} />
+    <div className={cn('scroll-thin flex-1 overflow-y-auto px-5 py-4', className)} {...props} />
   );
 }
 
@@ -87,7 +87,7 @@ export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLD
   return (
     <div
       className={cn(
-        'flex flex-col-reverse gap-2 border-t border-border bg-surface-muted/50 px-4 py-2.5 sm:flex-row sm:justify-end',
+        'flex flex-col-reverse gap-2 border-t border-border bg-surface-muted px-5 py-3 sm:flex-row sm:justify-end',
         className,
       )}
       {...props}
@@ -102,7 +102,7 @@ export const DialogTitle = React.forwardRef<
   return (
     <DialogPrimitive.Title
       ref={ref}
-      className={cn('text-lg font-semibold leading-tight', className)}
+      className={cn('text-lg font-semibold leading-tight tracking-tight', className)}
       {...props}
     />
   );

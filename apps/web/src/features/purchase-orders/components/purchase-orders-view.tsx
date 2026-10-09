@@ -40,7 +40,7 @@ export function PurchaseOrdersView() {
         enableSorting: true,
         accessorFn: (row) => row.number,
         cell: ({ row }) => (
-          <Link href={`/procurement/orders/${row.original.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+          <Link href={`/procurement/orders/${row.original.id}`} className="doc-link">
             {row.original.number}
           </Link>
         ),

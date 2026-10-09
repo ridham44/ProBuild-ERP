@@ -38,7 +38,7 @@ export function MaterialIssuesView() {
         id: 'number',
         header: 'Issue',
         cell: ({ row }) => (
-          <Link href={`/inventory/material-issues/${row.original.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+          <Link href={`/inventory/material-issues/${row.original.id}`} className="doc-link">
             {row.original.number}
           </Link>
         ),

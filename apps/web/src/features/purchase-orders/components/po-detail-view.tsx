@@ -10,14 +10,15 @@ import type { DataColumn } from '@/components/common/data-table/column-meta';
 import { DataTable } from '@/components/common/data-table/data-table';
 import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
+import { DetailPageSkeleton } from '@/components/common/page-skeleton';
 import { PageHeader } from '@/components/common/page-header';
+import { SummaryStrip, type SummaryFact } from '@/components/common/summary-strip';
 import { Panel } from '@/components/common/panel';
 import { ReasonDialog } from '@/components/common/reason-dialog';
 import { StatusBadge } from '@/components/common/status-badge';
 import { UrlTabs } from '@/components/common/url-tabs';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { currentApproval, DocumentApprovalPanel } from '@/features/approvals/components/document-approval';
 import { getDocumentDecisionRights } from '@/features/approvals/model';
@@ -39,25 +40,16 @@ import {
 import { availablePoActions, lineProgress, purchaseOrderCsv } from '../model';
 import { PoDocument } from './po-document';
 
-function SummaryStrip({ po }: { po: PurchaseOrderDetail }) {
-  const items: Array<{ label: string; value: React.ReactNode; numeric?: boolean }> = [
+function KeyFacts({ po }: { po: PurchaseOrderDetail }) {
+  const items: SummaryFact[] = [
     { label: 'Supplier', value: <Link href={`/procurement/suppliers/${po.supplierId}`} className="hover:underline">{po.supplier.name}</Link> },
     { label: 'Project', value: <Link href={`/projects/${po.projectId}`} className="hover:underline">{po.project.name}</Link> },
     { label: 'Warehouse', value: po.warehouse.name },
     { label: 'Order date', value: formatDate(po.orderDate) },
     { label: 'Expected delivery', value: po.expectedDate ? formatDate(po.expectedDate) : '—' },
-    { label: 'Total', value: formatPHP(po.totalAmount), numeric: true },
+    { label: 'Total', value: formatPHP(po.totalAmount), numeric: true, emphasis: true },
   ];
-  return (
-    <dl className="mb-5 grid gap-x-6 gap-y-2 rounded-lg border border-border bg-surface px-4 py-3 text-sm sm:grid-cols-3 lg:grid-cols-6 print:hidden">
-      {items.map((item) => (
-        <div key={item.label} className="min-w-0">
-          <dt className="text-xs text-muted-foreground">{item.label}</dt>
-          <dd className={`mt-0.5 truncate font-medium ${item.numeric ? 'num' : ''}`}>{item.value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
+  return <SummaryStrip facts={items} className="print:hidden" />;
 }
 
 function Items({ po }: { po: PurchaseOrderDetail }) {
@@ -152,7 +144,7 @@ function Receipts({ po }: { po: PurchaseOrderDetail }) {
         />
       ) : (
         <table className="w-full text-sm">
-          <thead className="bg-surface-muted text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <thead className="bg-surface-muted text-left text-xs font-semibold text-muted-foreground">
             <tr>
               <th className="px-4 py-2 font-medium">Receipt</th>
               <th className="px-2 py-2 font-medium">Received</th>
@@ -243,10 +235,7 @@ export function PoDetailView({ id }: { id: string }) {
   return (
     <PermissionGate module="procurement.order">
       {query.isPending ? (
-        <div className="space-y-4" role="status" aria-label="Loading purchase order">
-          <Skeleton className="h-7 w-72" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <DetailPageSkeleton label="Loading purchase order" />
       ) : query.isError || !po || !actions ? (
         <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
       ) : (
@@ -319,7 +308,7 @@ export function PoDetailView({ id }: { id: string }) {
                 Your role holds the current approval step for this purchase order.
               </Alert>
             ) : null}
-            <SummaryStrip po={po} />
+            <KeyFacts po={po} />
             <UrlTabs
               label="Purchase order sections"
               tabs={[

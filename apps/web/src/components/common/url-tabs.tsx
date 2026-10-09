@@ -30,10 +30,10 @@ export function UrlTabs({ tabs, label }: { tabs: UrlTab[]; label: string }) {
     <Tabs value={active} onValueChange={select}>
       <TabsList aria-label={label} className="overflow-y-hidden">
         {tabs.map((tab) => (
-          <TabsTrigger key={tab.id} value={tab.id}>
+          <TabsTrigger key={tab.id} value={tab.id} className="group">
             {tab.label}
             {tab.count !== undefined ? (
-              <span className="num rounded-sm bg-surface-muted px-1 text-2xs text-muted-foreground">
+              <span className="num rounded-full bg-surface-sunken px-1.5 py-px text-2xs font-medium text-muted-foreground group-data-[state=active]:bg-primary-subtle group-data-[state=active]:text-primary">
                 {tab.count}
               </span>
             ) : null}

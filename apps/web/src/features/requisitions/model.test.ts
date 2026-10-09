@@ -5,6 +5,7 @@ import {
   buildRequisitionPayload,
   duplicateLine,
   estimatedTotal,
+  isRequisitionOverdue,
   mapServerErrors,
   previewApprovalRoute,
   prStatusKey,
@@ -115,4 +116,27 @@ describe('previewApprovalRoute', () => {
 it('shows a submitted requisition as pending approval', () => {
   expect(prStatusKey('SUBMITTED')).toBe('PENDING_APPROVAL');
   expect(prStatusKey('APPROVED')).toBe('APPROVED');
+});
+
+describe('isRequisitionOverdue', () => {
+  const now = new Date('2026-10-09T02:00:00Z');
+  const past = '2026-10-01T00:00:00Z';
+
+  it('flags a passed needed-by date while nothing has been ordered', () => {
+    for (const status of ['DRAFT', 'SUBMITTED', 'APPROVED']) {
+      expect(isRequisitionOverdue({ status, requiredDate: past }, now)).toBe(true);
+    }
+  });
+
+  it('does not flag once ordering has started or the request is finished', () => {
+    for (const status of ['PARTIALLY_ORDERED', 'ORDERED', 'REJECTED', 'CANCELLED', 'CLOSED']) {
+      expect(isRequisitionOverdue({ status, requiredDate: past }, now)).toBe(false);
+    }
+  });
+
+  it('does not flag a date due today, a future date or no date', () => {
+    expect(isRequisitionOverdue({ status: 'APPROVED', requiredDate: '2026-10-09T00:00:00Z' }, now)).toBe(false);
+    expect(isRequisitionOverdue({ status: 'APPROVED', requiredDate: '2026-11-01T00:00:00Z' }, now)).toBe(false);
+    expect(isRequisitionOverdue({ status: 'APPROVED', requiredDate: null }, now)).toBe(false);
+  });
 });

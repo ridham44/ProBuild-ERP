@@ -2,7 +2,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 export const controlClasses =
-  'w-full rounded border border-input bg-surface px-2.5 text-base text-foreground shadow-xs placeholder:text-subtle-foreground transition-colors hover:border-border-strong focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-muted-foreground aria-[invalid=true]:border-danger aria-[invalid=true]:focus-visible:ring-danger md:text-sm';
+  'w-full rounded-md border border-input/80 bg-surface px-2.5 text-base text-foreground shadow-xs outline-none placeholder:text-subtle-foreground transition-[border-color,box-shadow] duration-150 hover:border-border-strong focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/15 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-muted-foreground aria-[invalid=true]:border-danger aria-[invalid=true]:focus-visible:ring-danger/15 md:text-sm';
 
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 

@@ -115,10 +115,10 @@ export function ComparisonMatrix({
       <table className="w-full min-w-[48rem] border-separate border-spacing-0 text-sm" aria-label="Supplier quotation comparison">
         <thead>
           <tr>
-            <th scope="col" className={cn(th, 'sticky left-0 z-10 min-w-56 text-xs uppercase tracking-wide text-muted-foreground')}>
+            <th scope="col" className={cn(th, 'sticky left-0 z-10 min-w-56 text-xs font-semibold text-muted-foreground')}>
               Item
             </th>
-            <th scope="col" className={cn(th, 'w-28 text-right text-xs uppercase tracking-wide text-muted-foreground')}>
+            <th scope="col" className={cn(th, 'w-28 text-right text-xs font-semibold text-muted-foreground')}>
               Required
             </th>
             {suppliers.map((supplier) => (

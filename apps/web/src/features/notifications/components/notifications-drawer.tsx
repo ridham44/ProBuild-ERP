@@ -8,13 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { NotificationDto } from '@/lib/api/types';
-import { formatRelative } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
   useNotifications,
 } from '../api/hooks';
+import { groupByDay } from '../presentation';
+import { NotificationRow } from './notification-row';
 
 /** Notification types that point at a screen that exists today. Others are shown but not linked. */
 export function notificationHref(notification: NotificationDto): string | null {
@@ -49,7 +50,10 @@ export function NotificationsDrawer({
         title="Notifications"
         description={unread > 0 ? `${unread} unread` : 'Everything is read'}
       >
-        <div className="flex items-center justify-end border-b border-border px-4 py-2">
+        <div className="flex items-center justify-between border-b border-border bg-surface-muted px-4 py-2">
+          <span className="text-xs text-muted-foreground">
+            {unread > 0 ? `${unread} unread` : 'You are all caught up'}
+          </span>
           <Button
             size="sm"
             variant="ghost"
@@ -83,44 +87,31 @@ export function NotificationsDrawer({
               description="Approval requests and decisions that involve you show up here."
             />
           ) : (
-            <ul className="divide-y divide-border">
-              {query.data.items.map((notification) => (
-                <li key={notification.id}>
-                  <button
-                    type="button"
-                    onClick={() => openNotification(notification)}
-                    className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-surface-muted/60"
-                  >
-                    <span
-                      className={cn(
-                        'mt-1.5 size-2 shrink-0 rounded-full',
-                        notification.readAt ? 'bg-transparent' : 'bg-primary',
-                      )}
-                      aria-hidden
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span
-                        className={cn(
-                          'block text-sm',
-                          notification.readAt ? 'text-muted-foreground' : 'font-medium',
-                        )}
-                      >
-                        {notification.title}
-                      </span>
-                      {notification.body ? (
-                        <span className="block text-xs text-muted-foreground">
-                          {notification.body}
-                        </span>
-                      ) : null}
-                      <span className="mt-0.5 block text-xs text-subtle-foreground">
-                        {formatRelative(notification.createdAt)}
-                      </span>
-                    </span>
-                    {notification.readAt ? null : <span className="sr-only">Unread</span>}
-                  </button>
-                </li>
+            <div className="pb-4">
+              {groupByDay(query.data.items).map((group) => (
+                <section key={group.label} aria-label={group.label}>
+                  <h3 className="eyebrow sticky top-0 z-[1] border-b border-border bg-surface-raised/95 px-4 py-2 backdrop-blur">
+                    {group.label}
+                  </h3>
+                  <ul>
+                    {group.items.map((notification) => (
+                      <li key={notification.id}>
+                        <button
+                          type="button"
+                          onClick={() => openNotification(notification)}
+                          className={cn(
+                            'flex w-full items-start gap-3 px-4 py-3 text-left outline-none transition-colors hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                            !notification.readAt && 'bg-primary-subtle/40',
+                          )}
+                        >
+                          <NotificationRow notification={notification} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </DrawerContent>

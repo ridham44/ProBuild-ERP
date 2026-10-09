@@ -1,7 +1,7 @@
 'use client';
 
 import { newIdempotencyKey } from '@probuild/api-client';
-import { Ban, Lock, PackageMinus, Send } from 'lucide-react';
+import { AlertTriangle, Ban, Lock, PackageMinus, Send } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 import { ActivityPanel } from '@/components/common/activity-panel';
@@ -10,14 +10,16 @@ import type { DataColumn } from '@/components/common/data-table/column-meta';
 import { DataTable } from '@/components/common/data-table/data-table';
 import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
+import { DetailPageSkeleton } from '@/components/common/page-skeleton';
+import { Meter } from '@/components/common/meter';
 import { PageHeader } from '@/components/common/page-header';
+import { SummaryStrip, type SummaryFact } from '@/components/common/summary-strip';
 import { DetailList, Panel } from '@/components/common/panel';
 import { ReasonDialog } from '@/components/common/reason-dialog';
 import { StatusBadge } from '@/components/common/status-badge';
 import { UrlTabs } from '@/components/common/url-tabs';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { currentApproval, DocumentApprovalPanel } from '@/features/approvals/components/document-approval';
 import { getDocumentDecisionRights } from '@/features/approvals/model';
@@ -35,24 +37,15 @@ import {
 } from '../api/hooks';
 import { availableMrActions, documentStatusKey } from '../model';
 
-function SummaryStrip({ request }: { request: MaterialRequestDetail }) {
-  const items: Array<{ label: string; value: React.ReactNode; numeric?: boolean }> = [
+function KeyFacts({ request }: { request: MaterialRequestDetail }) {
+  const items: SummaryFact[] = [
     { label: 'Project', value: <Link href={`/projects/${request.projectId}`} className="hover:underline">{request.project.name}</Link> },
     { label: 'Issue from', value: <Link href={`/inventory/warehouses/${request.warehouseId}`} className="hover:underline">{request.warehouse.name}</Link> },
     { label: 'Requested by', value: request.requester?.name ?? '—' },
     { label: 'Needed by', value: request.neededDate ? formatDate(request.neededDate) : '—' },
-    { label: 'Estimated cost', value: formatPHP(request.estimatedTotal), numeric: true },
+    { label: 'Estimated cost', value: formatPHP(request.estimatedTotal), numeric: true, emphasis: true },
   ];
-  return (
-    <dl className="mb-5 grid gap-x-6 gap-y-2 rounded-lg border border-border bg-surface px-4 py-3 text-sm sm:grid-cols-3 lg:grid-cols-5">
-      {items.map((item) => (
-        <div key={item.label} className="min-w-0">
-          <dt className="text-xs text-muted-foreground">{item.label}</dt>
-          <dd className={`mt-0.5 truncate font-medium ${item.numeric ? 'num' : ''}`}>{item.value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
+  return <SummaryStrip facts={items} />;
 }
 
 function Lines({ request }: { request: MaterialRequestDetail }) {
@@ -80,7 +73,27 @@ function Lines({ request }: { request: MaterialRequestDetail }) {
       },
       { id: 'qty', header: 'Requested', cell: ({ row }) => formatQty(row.original.qty, row.original.unit), meta: { numeric: true } },
       { id: 'approved', header: 'Approved', cell: ({ row }) => formatQty(row.original.approvedQty), meta: { numeric: true } },
-      { id: 'issued', header: 'Issued', cell: ({ row }) => formatQty(row.original.issuedQty), meta: { numeric: true } },
+      {
+        id: 'issued',
+        header: 'Issued',
+        cell: ({ row }) => {
+          const approved = Number(row.original.approvedQty);
+          return (
+            <div className="ml-auto w-28 space-y-1">
+              <p>{formatQty(row.original.issuedQty)}</p>
+              {approved > 0 ? (
+                <Meter
+                  value={(Number(row.original.issuedQty) / approved) * 100}
+                  label={`${row.original.item.name} issued of approved`}
+                  tone={Number(row.original.remainingQty) <= 0 ? 'success' : 'accent'}
+                  showValue={false}
+                />
+              ) : null}
+            </div>
+          );
+        },
+        meta: { numeric: true },
+      },
       {
         id: 'remaining',
         header: 'Left to issue',
@@ -92,7 +105,20 @@ function Lines({ request }: { request: MaterialRequestDetail }) {
             {
               id: 'stock',
               header: 'Stock available',
-              cell: ({ row }) => formatQty(row.original.stock.available, row.original.item.baseUnit),
+              cell: ({ row }) => {
+                const line = row.original;
+                const sameUnit = line.unit === line.item.baseUnit;
+                const short = sameUnit && Number(line.remainingQty) > 0 && Number(line.stock.available) < Number(line.remainingQty);
+                return short ? (
+                  <span className="inline-flex items-center gap-1 font-medium text-warning" title="Less stock available than is left to issue">
+                    <AlertTriangle className="size-3.5" aria-hidden />
+                    {formatQty(line.stock.available, line.item.baseUnit)}
+                    <span className="sr-only">(short)</span>
+                  </span>
+                ) : (
+                  formatQty(line.stock.available, line.item.baseUnit)
+                );
+              },
               meta: { numeric: true, hideBelow: 'md' },
             },
           ] satisfies DataColumn<MaterialRequestLine>[])
@@ -124,10 +150,10 @@ function Issues({ request }: { request: MaterialRequestDetail }) {
           description={request.status === 'APPROVED' ? 'Issues made against this request are listed here.' : 'Material can be issued once the request is approved.'}
         />
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="divide-y divide-border/70">
           {request.issues.map((issue) => (
-            <li key={issue.id} className="flex items-center gap-3 px-4 py-2 text-sm">
-              <Link href={`/inventory/material-issues/${issue.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+            <li key={issue.id} className="flex items-center gap-3 px-5 py-2.5 text-sm">
+              <Link href={`/inventory/material-issues/${issue.id}`} className="doc-link">
                 {issue.number}
               </Link>
               <StatusBadge status={issue.status} />
@@ -200,10 +226,7 @@ export function MaterialRequestDetailView({ id }: { id: string }) {
   return (
     <PermissionGate module="inventory.request">
       {query.isPending ? (
-        <div className="space-y-4" role="status" aria-label="Loading material request">
-          <Skeleton className="h-7 w-72" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <DetailPageSkeleton label="Loading material request" />
       ) : query.isError || !request || !actions ? (
         <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
       ) : (
@@ -257,7 +280,7 @@ export function MaterialRequestDetailView({ id }: { id: string }) {
               Your role holds the current approval step for this request.
             </Alert>
           ) : null}
-          <SummaryStrip request={request} />
+          <KeyFacts request={request} />
           <UrlTabs
             label="Material request sections"
             tabs={[

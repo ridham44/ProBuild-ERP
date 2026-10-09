@@ -1,5 +1,6 @@
 import type { RequisitionInput } from './api/hooks';
 import { isDecimal, mulDecimal, sumDecimal } from '@/lib/decimal';
+import { isBeforeManilaToday } from '@/lib/format';
 import type { RequisitionDetail, WorkflowDto } from '@/lib/api/types';
 
 /** One editable row of the requisition line table. Numbers are kept as decimal strings. */
@@ -258,4 +259,18 @@ export function mapServerErrors(
     result.general.push(issue.path ? `${issue.path}: ${issue.message}` : issue.message);
   }
   return result;
+}
+
+/** Statuses where nothing has been ordered yet, so a passed needed-by date is still actionable. */
+const PR_NOT_ORDERED_STATUSES: ReadonlySet<string> = new Set(['DRAFT', 'SUBMITTED', 'APPROVED']);
+
+/** Overdue means the needed-by date has passed and nothing has been ordered against the request yet. */
+export function isRequisitionOverdue(
+  requisition: { status: string; requiredDate: string | null },
+  now: Date = new Date(),
+): boolean {
+  return (
+    PR_NOT_ORDERED_STATUSES.has(requisition.status) &&
+    isBeforeManilaToday(requisition.requiredDate, now)
+  );
 }

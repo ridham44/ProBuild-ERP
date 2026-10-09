@@ -1,6 +1,6 @@
 'use client';
 
-import { Boxes, Pencil, Tag } from 'lucide-react';
+import { Boxes, Coins, Lock, PackageCheck, Pencil, Tag, Truck, Warehouse } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 import { ActivityPanel } from '@/components/common/activity-panel';
@@ -8,13 +8,14 @@ import type { DataColumn } from '@/components/common/data-table/column-meta';
 import { DataTable } from '@/components/common/data-table/data-table';
 import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
+import { DetailPageSkeleton } from '@/components/common/page-skeleton';
 import { PageHeader } from '@/components/common/page-header';
+import { Stat } from '@/components/common/stat';
 import { DetailList, Panel } from '@/components/common/panel';
 import { StatusBadge } from '@/components/common/status-badge';
 import { UrlTabs } from '@/components/common/url-tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useCan } from '@/features/auth/components/current-user';
 import { PermissionGate } from '@/features/auth/components/permission-gate';
 import type { ItemDetail, ItemStockSummary, PriceHistoryRow } from '@/lib/api/types';
@@ -117,6 +118,14 @@ function Overview({ item }: { item: ItemDetail }) {
 
 type StockRow = ItemStockSummary['warehouses'][number];
 
+function QtyFigure({ value, unit }: { value: string | undefined; unit: string }) {
+  return (
+    <>
+      {formatQty(value)} <span className="text-sm font-normal text-muted-foreground">{unit}</span>
+    </>
+  );
+}
+
 function StockTab({ itemId, unit }: { itemId: string; unit: string }) {
   const stock = useItemStock(itemId);
   const columns = React.useMemo<DataColumn<StockRow>[]>(
@@ -155,33 +164,15 @@ function StockTab({ itemId, unit }: { itemId: string; unit: string }) {
   const totals = stock.data?.totals;
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {(
-          [
-            ['On hand', totals?.onHand],
-            ['Reserved', totals?.reserved],
-            ['Committed', totals?.committed],
-            ['Available', totals?.available],
-          ] as const
-        ).map(([label, value]) => (
-          <div key={label} className="rounded-lg border border-border bg-surface px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-            {stock.isPending ? (
-              <Skeleton className="mt-2 h-6 w-20" />
-            ) : (
-              <p className="num mt-1 text-xl font-semibold">
-                {formatQty(value)} <span className="text-sm font-normal text-muted-foreground">{unit}</span>
-              </p>
-            )}
-          </div>
-        ))}
-        <div className="rounded-lg border border-border bg-surface px-4 py-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Stock value</p>
-          {stock.isPending ? <Skeleton className="mt-2 h-6 w-24" /> : <p className="num mt-1 text-xl font-semibold">{formatPHP(totals?.value)}</p>}
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <Stat label="On hand" value={<QtyFigure value={totals?.onHand} unit={unit} />} hint="usable stock, all warehouses" icon={Warehouse} tone="neutral" loading={stock.isPending} />
+        <Stat label="Reserved" value={<QtyFigure value={totals?.reserved} unit={unit} />} hint="approved requests, not issued" icon={Lock} tone="pending" loading={stock.isPending} />
+        <Stat label="Available" value={<QtyFigure value={totals?.available} unit={unit} />} hint="on hand minus reserved" icon={PackageCheck} tone="accent" loading={stock.isPending} />
+        <Stat label="On order" value={<QtyFigure value={totals?.committed} unit={unit} />} hint="open purchase orders, inbound" icon={Truck} tone="primary" loading={stock.isPending} />
+        <Stat label="Stock value" value={formatPHP(totals?.value)} hint="all stock statuses" icon={Coins} tone="violet" loading={stock.isPending} />
       </div>
       <p className="text-xs text-muted-foreground">
-        Available = on hand minus reserved and committed. Quarantined and damaged stock is never available.
+        Available is on hand minus reserved. On order is still with suppliers and not yet in stock. Quarantined and damaged stock is never available.
       </p>
       <DataTable
         caption="Stock by warehouse"
@@ -276,10 +267,7 @@ export function ItemDetailView({ id }: { id: string }) {
   return (
     <PermissionGate module="inventory.item">
       {item.isPending ? (
-        <div className="space-y-4" role="status" aria-label="Loading item">
-          <Skeleton className="h-7 w-64" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <DetailPageSkeleton label="Loading item" />
       ) : item.isError || !data ? (
         <QueryErrorState error={item.error} onRetry={() => void item.refetch()} />
       ) : (

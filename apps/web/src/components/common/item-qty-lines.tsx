@@ -51,7 +51,7 @@ export function ItemQtyLines({
     <div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[40rem] text-sm">
-          <thead className="bg-surface-muted text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <thead className="bg-surface-muted text-left text-xs font-semibold text-muted-foreground">
             <tr>
               <th className="px-4 py-2 font-medium">Item</th>
               <th className="w-32 px-2 py-2 text-right font-medium">Quantity</th>

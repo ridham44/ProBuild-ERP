@@ -3,7 +3,7 @@
 import type { SessionUser } from '@probuild/shared';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
-import { BrandMark } from '@/components/common/brand-mark';
+import { PageModuleProvider } from '@/components/common/page-module';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { useMe } from '@/features/auth/api/hooks';
 import { CurrentUserProvider } from '@/features/auth/components/current-user';
@@ -11,8 +11,9 @@ import { WorkContextProvider } from '@/features/context/work-context';
 import { NotificationsDrawer } from '@/features/notifications/components/notifications-drawer';
 import { CommandPalette } from '@/features/search/components/command-palette';
 import { useRegisterDomainSearchProviders } from '@/features/search/domain-providers';
+import { moduleForPath } from '../module-identity';
 import { useGlobalShortcuts } from '../use-global-shortcuts';
-import { Sidebar, SidebarNav } from './sidebar';
+import { Sidebar, SidebarBrand, SidebarNav } from './sidebar';
 import { ShortcutsDialog } from './shortcuts-dialog';
 import { Topbar } from './topbar';
 
@@ -54,6 +55,8 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
   const openPalette = React.useCallback(() => setPaletteOpen(true), []);
   const openHelp = React.useCallback(() => setHelpOpen(true), []);
 
+  const pageModule = React.useMemo(() => moduleForPath(pathname), [pathname]);
+
   useGlobalShortcuts({ openPalette, openHelp, toggleSidebar });
   useRegisterDomainSearchProviders();
 
@@ -74,7 +77,8 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
           onShowShortcuts={openHelp}
         />
         <main id="main" tabIndex={-1} className="scroll-thin flex-1 overflow-y-auto outline-none print:overflow-visible">
-          <div className="mx-auto w-full max-w-[1440px] px-4 py-5 md:px-6 md:py-6">{children}</div>
+          <div className="mx-auto w-full max-w-[1480px] px-4 py-5 md:px-6 md:py-6 lg:px-8"><PageModuleProvider value={pageModule}>{children}</PageModuleProvider>
+          </div>
         </main>
       </div>
 
@@ -85,10 +89,7 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
           hideHeader
           className="bg-sidebar text-sidebar-foreground"
         >
-          <div className="flex h-topbar shrink-0 items-center gap-2.5 border-b border-sidebar-border px-4">
-            <BrandMark className="size-6" />
-            <span className="text-base font-semibold tracking-tight text-white">ProBuild</span>
-          </div>
+          <SidebarBrand />
           <SidebarNav pathname={pathname} onNavigate={() => setMobileOpen(false)} />
         </DrawerContent>
       </Drawer>

@@ -133,6 +133,16 @@ export function manilaToday(now: Date = new Date()): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+/** True when the date falls on an earlier Manila calendar day than today (a date due today is not yet late). */
+export function isBeforeManilaToday(
+  value: string | Date | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  const date = toDate(value);
+  if (!date) return false;
+  return manilaToday(date) < manilaToday(now);
+}
+
 /** "Draft" from "DRAFT", "Pending Approval" from "PENDING_APPROVAL". */
 export function titleCase(value: string): string {
   return value

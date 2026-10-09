@@ -1,7 +1,7 @@
 'use client';
 
 import { PRIORITIES, PR_STATUSES } from '@probuild/shared';
-import { ClipboardList, Plus } from 'lucide-react';
+import { AlertTriangle, ArrowRight, ClipboardList, Clock, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -11,12 +11,14 @@ import { EmptyState } from '@/components/common/empty-state';
 import { FilterBar } from '@/components/common/filter-bar';
 import { PageHeader } from '@/components/common/page-header';
 import { SearchInput } from '@/components/common/search-input';
+import { PriorityBadge } from '@/components/common/priority-badge';
 import { StatusBadge } from '@/components/common/status-badge';
-import { Badge } from '@/components/ui/badge';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useApprovals } from '@/features/approvals/api/hooks';
 import { useCan, useCurrentUser } from '@/features/auth/components/current-user';
 import { PermissionGate } from '@/features/auth/components/permission-gate';
 import { ProjectScopeChip, useProjectScope } from '@/features/context/project-scope';
@@ -24,13 +26,34 @@ import type { RequisitionRow } from '@/lib/api/types';
 import { formatDate, formatPHP, titleCase } from '@/lib/format';
 import { useListState } from '@/lib/list-state';
 import { useRequisitions } from '../api/hooks';
-import { prStatusKey } from '../model';
+import { isRequisitionOverdue, prStatusKey } from '../model';
 
 const INITIAL = { status: '', priority: '' } as Record<string, string>;
 
-export function PriorityBadge({ priority }: { priority: string }) {
-  const tone = priority === 'URGENT' ? 'danger' : priority === 'HIGH' ? 'warning' : 'neutral';
-  return <Badge tone={tone}>{titleCase(priority)}</Badge>;
+/** Requisitions whose current approval step belongs to this user's role, from the approvals inbox. */
+function useAwaitingMyApproval(): Set<string> {
+  const canApprove = useCan('approvals.inbox', 'VIEW');
+  const approvals = useApprovals({ mine: true, limit: 100 }, canApprove);
+  return React.useMemo(
+    () =>
+      new Set(
+        (approvals.data?.items ?? [])
+          .filter((request) => request.documentType === 'PURCHASE_REQUISITION' && request.status === 'PENDING')
+          .map((request) => request.documentId),
+      ),
+    [approvals.data],
+  );
+}
+
+function NeededBy({ row }: { row: RequisitionRow }) {
+  if (!isRequisitionOverdue(row)) return <span className="text-muted-foreground">{formatDate(row.requiredDate)}</span>;
+  return (
+    <span className="inline-flex items-center gap-1 font-medium text-danger" title="Past needed-by date and not yet ordered">
+      <AlertTriangle className="size-3.5" aria-hidden />
+      {formatDate(row.requiredDate)}
+      <span className="sr-only">(overdue)</span>
+    </span>
+  );
 }
 
 export function RequisitionsView() {
@@ -46,6 +69,7 @@ export function RequisitionsView() {
     ...(mine ? { requesterId: me.id } : {}),
   });
   const page = requisitions.data;
+  const awaitingMe = useAwaitingMyApproval();
 
   const columns = React.useMemo<DataColumn<RequisitionRow>[]>(
     () => [
@@ -55,9 +79,17 @@ export function RequisitionsView() {
         enableSorting: true,
         accessorFn: (row) => row.number,
         cell: ({ row }) => (
-          <Link href={`/procurement/requests/${row.original.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
-            {row.original.number}
-          </Link>
+          <div className="flex flex-col items-start gap-1">
+            <Link href={`/procurement/requests/${row.original.id}`} className="doc-link">
+              {row.original.number}
+            </Link>
+            {awaitingMe.has(row.original.id) ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-pending-subtle px-1.5 py-px text-2xs font-semibold text-pending">
+                <Clock className="size-3" aria-hidden />
+                Your approval
+              </span>
+            ) : null}
+          </div>
         ),
         meta: { sticky: true },
       },
@@ -66,9 +98,9 @@ export function RequisitionsView() {
         header: 'Purpose',
         cell: ({ row }) => (
           <div className="min-w-0">
-            <p className="max-w-80 truncate">{row.original.purpose ?? <span className="text-muted-foreground">No purpose stated</span>}</p>
-            <p className="text-xs text-muted-foreground">
-              {row.original.project.code} · {row.original.project.name}
+            <p className="max-w-80 truncate font-medium">{row.original.purpose ?? <span className="font-normal text-subtle-foreground">No purpose stated</span>}</p>
+            <p className="max-w-80 truncate text-xs text-muted-foreground">
+              <span className="font-mono">{row.original.project.code}</span> · {row.original.project.name}
             </p>
           </div>
         ),
@@ -79,7 +111,7 @@ export function RequisitionsView() {
         header: 'Needed by',
         accessorFn: (row) => row.requiredDate ?? '',
         enableSorting: true,
-        cell: ({ row }) => formatDate(row.original.requiredDate),
+        cell: ({ row }) => <NeededBy row={row.original} />,
         meta: { hideBelow: 'md' },
       },
       { id: 'lines', header: 'Lines', accessorFn: (row) => row._count.lines, cell: ({ row }) => row.original._count.lines, meta: { numeric: true, hideBelow: 'sm' } },
@@ -88,7 +120,7 @@ export function RequisitionsView() {
         header: 'Estimated',
         accessorFn: (row) => Number(row.estimatedTotal),
         enableSorting: true,
-        cell: ({ row }) => formatPHP(row.original.estimatedTotal),
+        cell: ({ row }) => <span className="font-medium">{formatPHP(row.original.estimatedTotal)}</span>,
         meta: { numeric: true },
       },
       { id: 'status', header: 'Status', cell: ({ row }) => <StatusBadge status={prStatusKey(row.original.status)} /> },
@@ -97,11 +129,11 @@ export function RequisitionsView() {
         header: 'Raised',
         accessorFn: (row) => row.createdAt,
         enableSorting: true,
-        cell: ({ row }) => formatDate(row.original.createdAt),
+        cell: ({ row }) => <span className="text-muted-foreground">{formatDate(row.original.createdAt)}</span>,
         meta: { hideBelow: 'lg' },
       },
     ],
-    [],
+    [awaitingMe],
   );
 
   const filtering = Boolean(list.debounced) || list.activeCount > 0 || mine || Boolean(scope.projectId);
@@ -122,6 +154,23 @@ export function RequisitionsView() {
           ) : null
         }
       />
+      {awaitingMe.size > 0 ? (
+        <Alert
+          tone="warning"
+          className="mb-4"
+          title={`${awaitingMe.size} ${awaitingMe.size === 1 ? 'requisition is' : 'requisitions are'} waiting on your approval`}
+          action={
+            <Button asChild size="sm">
+              <Link href="/approvals">
+                Review in approvals
+                <ArrowRight className="size-3.5" aria-hidden />
+              </Link>
+            </Button>
+          }
+        >
+          They are marked “Your approval” in the list below.
+        </Alert>
+      ) : null}
       <DataTable
         caption="Purchase requisitions"
         columns={columns}

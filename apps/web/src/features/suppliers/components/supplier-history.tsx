@@ -37,7 +37,7 @@ export function SupplierHistory({ supplierId }: { supplierId: string }) {
         cell: ({ row }) => (
           <Link
             href={`/procurement/orders/${row.original.id}`}
-            className="font-mono text-xs font-medium text-primary hover:underline"
+            className="doc-link"
           >
             {row.original.number}
           </Link>

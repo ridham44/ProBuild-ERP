@@ -44,20 +44,42 @@ export function UserMenu({ onShowShortcuts }: { onShowShortcuts: () => void }) {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex size-8 items-center justify-center rounded bg-foreground text-xs font-semibold text-background hover:opacity-90"
+          className="flex items-center gap-2 rounded-lg p-0.5 outline-none transition-colors hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-surface-muted xl:pr-2.5"
           aria-label={`Account menu for ${user.name}`}
         >
-          {initials(user.name)}
+          <span className="flex size-7 items-center justify-center rounded-full bg-sidebar text-2xs font-semibold text-white ring-2 ring-accent/30">
+            {initials(user.name)}
+          </span>
+          <span className="hidden max-w-36 text-left leading-tight xl:block">
+            <span className="block truncate text-sm font-medium">{user.name}</span>
+            {user.roles.length > 0 ? (
+              <span className="block truncate text-2xs text-muted-foreground">{user.roles[0]}</span>
+            ) : null}
+          </span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-64">
-        <div className="px-2 py-1.5">
-          <p className="truncate text-sm font-medium">{user.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-          {user.roles.length > 0 ? (
-            <p className="mt-1 truncate text-xs text-muted-foreground">{user.roles.join(', ')}</p>
-          ) : null}
+        <div className="flex items-center gap-2.5 px-2 py-2">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sidebar text-xs font-semibold text-white">
+            {initials(user.name)}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">{user.name}</p>
+            <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+          </div>
         </div>
+        {user.roles.length > 0 ? (
+          <div className="flex flex-wrap gap-1 px-2 pb-2">
+            {user.roles.map((role) => (
+              <span
+                key={role}
+                className="rounded-full bg-surface-muted px-2 py-0.5 text-2xs font-medium text-muted-foreground"
+              >
+                {role}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Account</DropdownMenuLabel>
         <DropdownMenuItem asChild>

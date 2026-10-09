@@ -28,7 +28,7 @@ export function Pagination({
 }: PaginationProps) {
   if (!hasPrevious && !hasNext) {
     return count === 0 ? null : (
-      <p className={cn('text-sm text-muted-foreground', className)}>
+      <p className={cn('num text-xs text-muted-foreground', className)}>
         {count} {count === 1 ? 'row' : 'rows'}
       </p>
     );
@@ -37,7 +37,7 @@ export function Pagination({
     <nav
       aria-label="Pagination"
       className={cn(
-        'flex items-center justify-between gap-3 text-sm text-muted-foreground',
+        'num flex items-center justify-between gap-3 text-xs text-muted-foreground',
         className,
       )}
     >

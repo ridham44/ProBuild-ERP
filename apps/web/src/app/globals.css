@@ -3,111 +3,136 @@
 @tailwind utilities;
 
 /*
- * ProBuild design tokens. Navy base and one royal-blue accent taken from the ProBuild logo, used for primary actions,
- * focus and the active navigation marker. Colours are HSL channels so Tailwind can apply alpha.
+ * ProBuild Signature tokens. Navy carries structure, cobalt carries interaction, teal marks operational highlights and
+ * semantic hues carry workflow state. Text-bearing shades are darkened past the brand swatch to keep 4.5:1 contrast
+ * on white and on the warm canvas. Colours are HSL channels so Tailwind can apply alpha.
  */
 @layer base {
   :root {
-    --background: 210 20% 97%;
-    --foreground: 224 45% 12%;
+    --background: 80 14% 95.5%;
+    --foreground: 222 47% 13%;
     --surface: 0 0% 100%;
-    --surface-muted: 210 20% 95%;
+    --surface-muted: 75 12% 96%;
+    --surface-sunken: 78 12% 93%;
     --surface-raised: 0 0% 100%;
-    --border: 214 18% 87%;
-    --border-strong: 214 16% 76%;
-    --input: 214 14% 68%;
-    --muted-foreground: 215 14% 36%;
-    --subtle-foreground: 215 10% 46%;
-    --ring: 221 83% 46%;
-    --shadow: 217 40% 10%;
+    --border: 214 25% 89%;
+    --border-strong: 214 18% 78%;
+    --input: 214 16% 74%;
+    --muted-foreground: 216 18% 34%;
+    --subtle-foreground: 215 14% 44%;
+    --ring: 226 70% 52%;
+    --shadow: 222 47% 13%;
 
-    --primary: 221 83% 40%;
-    --primary-hover: 222 85% 32%;
+    --primary: 226 66% 51%;
+    --primary-hover: 226 64% 43%;
     --primary-foreground: 0 0% 100%;
-    --primary-subtle: 218 100% 96%;
-    --primary-border: 218 85% 80%;
+    --primary-subtle: 226 85% 96.5%;
+    --primary-border: 226 70% 85%;
 
-    --success: 152 55% 24%;
-    --success-subtle: 145 45% 94%;
-    --success-border: 145 30% 76%;
-    --warning: 36 90% 26%;
-    --warning-subtle: 44 95% 91%;
-    --warning-border: 40 70% 68%;
-    --danger: 0 65% 40%;
-    --danger-subtle: 0 85% 96%;
-    --danger-border: 0 60% 82%;
-    --info: 210 70% 34%;
-    --info-subtle: 210 80% 95%;
-    --info-border: 210 55% 78%;
-    --pending: 245 40% 40%;
-    --pending-subtle: 245 70% 96%;
-    --pending-border: 245 40% 82%;
-    --approved: 168 70% 22%;
-    --approved-subtle: 165 50% 93%;
-    --approved-border: 165 35% 72%;
-    --rejected: 350 62% 38%;
-    --rejected-subtle: 350 80% 96%;
-    --rejected-border: 350 50% 82%;
-    --overdue: 12 85% 32%;
-    --overdue-subtle: 14 95% 94%;
-    --overdue-border: 14 70% 74%;
+    --accent: 174 83% 34%;
+    --accent-strong: 174 84% 25%;
+    --accent-foreground: 0 0% 100%;
+    --accent-subtle: 170 52% 93%;
+    --accent-border: 172 42% 76%;
 
-    --sidebar: 226 55% 10%;
-    --sidebar-foreground: 214 22% 80%;
-    --sidebar-muted: 215 14% 56%;
-    --sidebar-active: 224 45% 18%;
-    --sidebar-border: 224 38% 19%;
-    --sidebar-accent: 196 100% 55%;
+    --violet: 257 51% 52%;
+    --violet-subtle: 258 70% 96.5%;
+    --violet-border: 257 50% 85%;
+
+    --success: 158 71% 27%;
+    --success-subtle: 152 48% 93.5%;
+    --success-border: 152 36% 77%;
+    --warning: 30 82% 32%;
+    --warning-subtle: 36 92% 93%;
+    --warning-border: 34 70% 76%;
+    --danger: 356 56% 45%;
+    --danger-subtle: 354 80% 96.5%;
+    --danger-border: 354 58% 86%;
+    --info: 208 72% 35%;
+    --info-subtle: 208 78% 95.5%;
+    --info-border: 208 55% 83%;
+    --pending: 38 86% 29%;
+    --pending-subtle: 44 90% 92%;
+    --pending-border: 42 70% 72%;
+    --approved: 174 84% 25%;
+    --approved-subtle: 170 52% 93%;
+    --approved-border: 172 42% 76%;
+    --rejected: 354 58% 42%;
+    --rejected-subtle: 354 80% 96.5%;
+    --rejected-border: 354 58% 86%;
+    --overdue: 8 72% 40%;
+    --overdue-subtle: 10 90% 95%;
+    --overdue-border: 10 70% 82%;
+
+    --sidebar: 222 50% 13%;
+    --sidebar-foreground: 218 26% 80%;
+    --sidebar-muted: 218 16% 58%;
+    --sidebar-hover: 222 44% 17%;
+    --sidebar-active: 223 42% 21%;
+    --sidebar-border: 222 38% 19%;
+    --sidebar-accent: 172 66% 50%;
   }
 
   :root[data-theme='dark'] {
-    --background: 217 28% 8%;
-    --foreground: 210 20% 92%;
-    --surface: 217 26% 11%;
-    --surface-muted: 217 24% 14%;
-    --surface-raised: 217 24% 13%;
-    --border: 217 20% 20%;
-    --border-strong: 217 16% 30%;
-    --input: 217 14% 36%;
-    --muted-foreground: 214 16% 70%;
-    --subtle-foreground: 214 12% 58%;
-    --ring: 214 95% 62%;
+    --background: 222 32% 7%;
+    --foreground: 214 24% 92%;
+    --surface: 222 28% 10.5%;
+    --surface-muted: 222 24% 13.5%;
+    --surface-sunken: 222 30% 8.5%;
+    --surface-raised: 222 26% 12.5%;
+    --border: 222 20% 19%;
+    --border-strong: 222 16% 29%;
+    --input: 222 14% 35%;
+    --muted-foreground: 216 18% 70%;
+    --subtle-foreground: 216 12% 58%;
+    --ring: 226 90% 68%;
     --shadow: 0 0% 0%;
 
-    --primary: 217 92% 62%;
-    --primary-hover: 214 95% 68%;
-    --primary-foreground: 226 50% 8%;
-    --primary-subtle: 222 45% 17%;
-    --primary-border: 220 50% 34%;
+    --primary: 226 88% 68%;
+    --primary-hover: 226 92% 74%;
+    --primary-foreground: 224 50% 9%;
+    --primary-subtle: 226 42% 17%;
+    --primary-border: 226 45% 34%;
 
-    --success: 145 50% 62%;
-    --success-subtle: 150 30% 14%;
-    --success-border: 150 30% 28%;
-    --warning: 42 90% 62%;
-    --warning-subtle: 42 40% 14%;
-    --warning-border: 42 45% 30%;
-    --danger: 0 85% 72%;
-    --danger-subtle: 0 35% 15%;
-    --danger-border: 0 35% 32%;
-    --info: 210 85% 72%;
-    --info-subtle: 210 40% 15%;
-    --info-border: 210 40% 32%;
-    --pending: 245 85% 80%;
-    --pending-subtle: 245 30% 17%;
-    --pending-border: 245 30% 34%;
-    --approved: 165 55% 62%;
-    --approved-subtle: 165 30% 14%;
-    --approved-border: 165 30% 28%;
-    --rejected: 350 85% 74%;
-    --rejected-subtle: 350 32% 16%;
-    --rejected-border: 350 32% 32%;
-    --overdue: 14 90% 70%;
-    --overdue-subtle: 14 40% 16%;
-    --overdue-border: 14 40% 32%;
+    --accent: 172 62% 50%;
+    --accent-strong: 172 60% 60%;
+    --accent-foreground: 174 60% 8%;
+    --accent-subtle: 174 36% 13%;
+    --accent-border: 174 34% 27%;
 
-    --sidebar: 226 55% 6%;
-    --sidebar-active: 224 40% 13%;
-    --sidebar-border: 224 32% 14%;
+    --violet: 257 80% 78%;
+    --violet-subtle: 257 32% 17%;
+    --violet-border: 257 30% 34%;
+
+    --success: 152 52% 60%;
+    --success-subtle: 152 32% 13%;
+    --success-border: 152 30% 27%;
+    --warning: 34 88% 62%;
+    --warning-subtle: 34 42% 14%;
+    --warning-border: 34 45% 30%;
+    --danger: 356 84% 72%;
+    --danger-subtle: 356 36% 15%;
+    --danger-border: 356 36% 32%;
+    --info: 208 85% 72%;
+    --info-subtle: 208 42% 15%;
+    --info-border: 208 40% 32%;
+    --pending: 42 88% 64%;
+    --pending-subtle: 42 42% 14%;
+    --pending-border: 42 45% 30%;
+    --approved: 172 60% 60%;
+    --approved-subtle: 174 36% 13%;
+    --approved-border: 174 34% 27%;
+    --rejected: 354 84% 74%;
+    --rejected-subtle: 354 34% 16%;
+    --rejected-border: 354 34% 32%;
+    --overdue: 10 88% 70%;
+    --overdue-subtle: 10 40% 15%;
+    --overdue-border: 10 40% 31%;
+
+    --sidebar: 222 50% 6%;
+    --sidebar-hover: 222 40% 10%;
+    --sidebar-active: 222 40% 13%;
+    --sidebar-border: 222 32% 13%;
   }
 
   * {
@@ -117,6 +142,13 @@
   html {
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
+  }
+
+  /* Smooth anchor scrolling only on pages that opt in (the public home page), and never for reduced motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    html:has([data-smooth-scroll]) {
+      scroll-behavior: smooth;
+    }
   }
 
   body {
@@ -131,6 +163,18 @@
   ::selection {
     background: hsl(var(--primary) / 0.22);
   }
+
+  /* Motion only signals state changes, so it can be dropped entirely for people who ask for less. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @layer components {
@@ -144,6 +188,22 @@
   .scroll-thin {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border-strong)) transparent;
+  }
+
+  /* Document numbers and codes: monospace, slightly tightened so long identifiers stay on one line. */
+  .doc-id {
+    @apply font-mono text-xs font-medium tracking-tight;
+  }
+
+  /* A clickable document number in a table or list: distinct from prose, obviously a link. */
+  .doc-link {
+    @apply -mx-1 rounded px-1 py-0.5 font-mono text-xs font-medium text-primary underline-offset-2 transition-colors hover:bg-primary-subtle hover:underline;
+  }
+
+  /* Small all-caps label for section eyebrows and grouped column headings. */
+  .eyebrow {
+    @apply text-2xs font-semibold uppercase tracking-[0.08em];
+    color: hsl(var(--subtle-foreground));
   }
 }
 

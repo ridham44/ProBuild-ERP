@@ -87,7 +87,7 @@ function MatrixRow({
             {editable ? (
               <input
                 type="checkbox"
-                className="size-3.5 cursor-pointer accent-[hsl(var(--primary))] disabled:cursor-not-allowed disabled:opacity-40"
+                className="size-3.5 cursor-pointer accent-primary disabled:cursor-not-allowed disabled:opacity-40"
                 checked={on}
                 disabled={!allowed}
                 title={allowed ? undefined : 'You cannot grant a permission you do not hold'}
@@ -123,7 +123,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
           <tr>
             <th
               scope="col"
-              className="sticky left-0 top-0 z-20 border-b border-border bg-surface-muted px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground"
+              className="sticky left-0 top-0 z-20 border-b border-border bg-surface-muted px-3 py-2 text-left text-xs font-semibold text-muted-foreground"
             >
               Module
             </th>

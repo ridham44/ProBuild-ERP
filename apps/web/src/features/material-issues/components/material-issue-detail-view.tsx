@@ -10,14 +10,15 @@ import type { DataColumn } from '@/components/common/data-table/column-meta';
 import { DataTable } from '@/components/common/data-table/data-table';
 import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
+import { DetailPageSkeleton } from '@/components/common/page-skeleton';
 import { PageHeader } from '@/components/common/page-header';
+import { SummaryStrip, type SummaryFact } from '@/components/common/summary-strip';
 import { DetailList, Panel } from '@/components/common/panel';
 import { ReasonDialog } from '@/components/common/reason-dialog';
 import { StatusBadge } from '@/components/common/status-badge';
 import { UrlTabs } from '@/components/common/url-tabs';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { useCan } from '@/features/auth/components/current-user';
 import { PermissionGate } from '@/features/auth/components/permission-gate';
@@ -32,8 +33,8 @@ import {
 } from '../api/hooks';
 import { availableMiActions } from '../model';
 
-function SummaryStrip({ issue }: { issue: MaterialIssueDetail }) {
-  const items: Array<{ label: string; value: React.ReactNode; numeric?: boolean }> = [
+function KeyFacts({ issue }: { issue: MaterialIssueDetail }) {
+  const items: SummaryFact[] = [
     { label: 'Project', value: <Link href={`/projects/${issue.projectId}`} className="hover:underline">{issue.project.name}</Link> },
     { label: 'Issued from', value: <Link href={`/inventory/warehouses/${issue.warehouseId}`} className="hover:underline">{issue.warehouse.name}</Link> },
     {
@@ -48,18 +49,9 @@ function SummaryStrip({ issue }: { issue: MaterialIssueDetail }) {
     },
     { label: 'Issue date', value: formatDate(issue.issueDate) },
     { label: 'Issued by', value: issue.issuedBy?.name ?? '—' },
-    { label: 'Cost', value: issue.status === 'POSTED' ? formatPHP(issue.totalCost) : '—', numeric: true },
+    { label: 'Cost', value: issue.status === 'POSTED' ? formatPHP(issue.totalCost) : '—', numeric: true, emphasis: true },
   ];
-  return (
-    <dl className="mb-5 grid gap-x-6 gap-y-2 rounded-lg border border-border bg-surface px-4 py-3 text-sm sm:grid-cols-3 lg:grid-cols-6">
-      {items.map((item) => (
-        <div key={item.label} className="min-w-0">
-          <dt className="text-xs text-muted-foreground">{item.label}</dt>
-          <dd className={`mt-0.5 truncate font-medium ${item.numeric ? 'num' : ''}`}>{item.value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
+  return <SummaryStrip facts={items} />;
 }
 
 function Lines({ issue }: { issue: MaterialIssueDetail }) {
@@ -202,10 +194,7 @@ export function MaterialIssueDetailView({ id }: { id: string }) {
   return (
     <PermissionGate module="inventory.issue">
       {query.isPending ? (
-        <div className="space-y-4" role="status" aria-label="Loading material issue">
-          <Skeleton className="h-7 w-72" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <DetailPageSkeleton label="Loading material issue" />
       ) : query.isError || !issue || !actions ? (
         <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
       ) : (
@@ -236,7 +225,7 @@ export function MaterialIssueDetailView({ id }: { id: string }) {
               This issue has no material request. Posting it needs the override permission.
             </Alert>
           ) : null}
-          <SummaryStrip issue={issue} />
+          <KeyFacts issue={issue} />
           <UrlTabs
             label="Material issue sections"
             tabs={[

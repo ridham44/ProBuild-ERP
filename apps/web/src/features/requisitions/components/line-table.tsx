@@ -149,7 +149,7 @@ export function LineTable({ lines, errors, showErrors, dimensions, onChange, dis
       <div className="overflow-x-auto">
         <table className="w-full min-w-[56rem] border-separate border-spacing-0 text-sm" aria-label="Requisition lines">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <tr className="text-left text-xs font-semibold text-muted-foreground">
               <th scope="col" className="w-14 border-b border-border bg-surface-muted px-2 py-2 font-medium">
                 <span className="sr-only">Line</span>#
               </th>

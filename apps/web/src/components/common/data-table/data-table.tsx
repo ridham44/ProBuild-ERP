@@ -34,7 +34,7 @@ function SkeletonCell({ meta, padding }: { meta: ColumnPresentation; padding: st
   return (
     <td
       className={cn(
-        'border-b border-border',
+        'border-b border-border/70',
         padding,
         meta.hideBelow && HIDE_BELOW[meta.hideBelow],
       )}
@@ -117,7 +117,8 @@ export function DataTable<T>({
 
   const rows = table.getRowModel().rows;
   const visibleColumns = table.getVisibleLeafColumns();
-  const cellPadding = density === 'compact' ? 'px-3 py-1.5' : 'px-3 py-3';
+  const cellPadding =
+    density === 'compact' ? 'px-3 py-2 first:pl-4 last:pr-4' : 'px-3 py-3.5 first:pl-4 last:pr-4';
 
   React.useEffect(() => {
     if (!onSelectionChange) return;
@@ -176,16 +177,30 @@ export function DataTable<T>({
   const selectedCount = Object.keys(selection).length;
   const filteredOut = !loading && !error && data.length > 0 && rows.length === 0;
 
+  const showFooter =
+    pagination !== undefined &&
+    !error &&
+    data.length > 0 &&
+    (pagination.hasNext || pagination.hasPrevious || pagination.count > 0);
+
   return (
-    <div className={cn('flex flex-col gap-2', className)}>
-      <div className="flex flex-wrap items-center gap-2">
+    <div
+      className={cn(
+        'flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-card',
+        className,
+      )}
+    >
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2.5 md:px-4">
         {getSearchText ? (
           <SearchInput value={search} onValueChange={setSearch} placeholder={searchPlaceholder} />
         ) : null}
         {toolbar}
         <div className="ml-auto flex items-center gap-1.5">
           {selectedCount > 0 ? (
-            <span className="mr-1 text-sm text-muted-foreground" aria-live="polite">
+            <span
+              className="mr-1 rounded-full bg-primary-subtle px-2 py-0.5 text-xs font-medium text-primary"
+              aria-live="polite"
+            >
               {selectedCount} selected
             </span>
           ) : null}
@@ -194,7 +209,7 @@ export function DataTable<T>({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+      <div>
         {error ? (
           <QueryErrorState error={error} {...(onRetry ? { onRetry } : {})} compact />
         ) : !loading && data.length === 0 ? (
@@ -212,7 +227,7 @@ export function DataTable<T>({
                     {selectable ? (
                       <th
                         scope="col"
-                        className="sticky left-0 top-0 z-20 w-9 border-b border-border bg-surface-muted px-3 py-2"
+                        className="sticky left-0 top-0 z-20 w-9 border-b border-border bg-surface-muted py-2.5 pl-4 pr-3"
                       >
                         <Checkbox
                           aria-label="Select all rows"
@@ -244,7 +259,7 @@ export function DataTable<T>({
                                 : undefined
                           }
                           className={cn(
-                            'sticky top-0 whitespace-nowrap border-b border-border bg-surface-muted px-3 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground',
+                            'sticky top-0 whitespace-nowrap border-b border-border bg-surface-muted px-3 py-2.5 text-xs font-semibold text-muted-foreground first:pl-4 last:pr-4',
                             meta.numeric ? 'text-right' : 'text-left',
                             meta.sticky ? 'left-0 z-20' : 'z-10',
                             meta.hideBelow && HIDE_BELOW[meta.hideBelow],
@@ -255,7 +270,8 @@ export function DataTable<T>({
                               type="button"
                               onClick={header.column.getToggleSortingHandler()}
                               className={cn(
-                                '-mx-1 inline-flex items-center gap-1 rounded px-1 uppercase tracking-wide hover:text-foreground',
+                                'group/sort -mx-1 inline-flex items-center gap-1 rounded px-1 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
+                                sorted && 'text-foreground',
                                 meta.numeric && 'flex-row-reverse',
                               )}
                             >
@@ -271,7 +287,7 @@ export function DataTable<T>({
                   </tr>
                 ))}
               </thead>
-              <tbody ref={bodyRef}>
+              <tbody ref={bodyRef} className="[&>tr:last-child>td]:border-b-0">
                 {loading
                   ? Array.from({ length: 6 }, (_, rowIndex) => (
                       <tr key={rowIndex}>
@@ -302,12 +318,12 @@ export function DataTable<T>({
                           onDoubleClick={
                             onRowActivate ? () => onRowActivate(row.original) : undefined
                           }
-                          className="group/row outline-none hover:bg-surface-muted/60 focus-visible:bg-surface-muted focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring data-[state=selected]:bg-primary-subtle"
+                          className="group/row outline-none transition-colors hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring data-[state=selected]:bg-primary-subtle"
                         >
                           {selectable ? (
                             <td
                               className={cn(
-                                'sticky left-0 z-[1] w-9 border-b border-border bg-surface group-hover/row:bg-surface-muted group-data-[state=selected]/row:bg-primary-subtle',
+                                'sticky left-0 z-[1] w-9 border-b border-border/70 bg-surface transition-colors group-hover/row:bg-surface-muted group-data-[state=selected]/row:bg-primary-subtle',
                                 cellPadding,
                               )}
                             >
@@ -324,11 +340,11 @@ export function DataTable<T>({
                               <td
                                 key={cell.id}
                                 className={cn(
-                                  'border-b border-border align-middle',
+                                  'border-b border-border/70 align-middle',
                                   cellPadding,
                                   meta.numeric && 'num text-right',
                                   meta.sticky &&
-                                    'sticky left-0 z-[1] bg-surface group-hover/row:bg-surface-muted group-data-[state=selected]/row:bg-primary-subtle',
+                                    'sticky left-0 z-[1] bg-surface transition-colors group-hover/row:bg-surface-muted group-data-[state=selected]/row:bg-primary-subtle',
                                   meta.hideBelow && HIDE_BELOW[meta.hideBelow],
                                 )}
                               >
@@ -351,7 +367,11 @@ export function DataTable<T>({
           </div>
         )}
       </div>
-      {pagination ? <Pagination {...pagination} /> : null}
+      {showFooter && pagination ? (
+        <div className="border-t border-border bg-surface-muted/70 px-3 py-2 md:px-4">
+          <Pagination {...pagination} />
+        </div>
+      ) : null}
     </div>
   );
 }

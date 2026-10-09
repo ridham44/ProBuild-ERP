@@ -1,12 +1,13 @@
 'use client';
 
-import { Coins } from 'lucide-react';
+import { Coins, FileSignature, Receipt, ShoppingCart, Wallet } from 'lucide-react';
 import * as React from 'react';
 import type { DataColumn } from '@/components/common/data-table/column-meta';
 import { DataTable } from '@/components/common/data-table/data-table';
 import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
 import { Panel } from '@/components/common/panel';
+import { Stat } from '@/components/common/stat';
 import { Skeleton } from '@/components/ui/skeleton';
 import { isApiError } from '@/lib/api/errors';
 import type { BudgetDetail, ProjectDetail } from '@/lib/api/types';
@@ -18,34 +19,17 @@ import { shareOf } from '../model';
 
 type Line = BudgetDetail['lines'][number];
 
-function Figure({
-  label,
-  value,
-  hint,
-  tone,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  tone?: 'danger';
-}) {
-  return (
-    <div className="rounded-lg border border-border bg-surface px-4 py-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={cn('num mt-1 text-xl font-semibold leading-tight', tone === 'danger' && 'text-danger')}>{value}</p>
-      {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
-    </div>
-  );
-}
-
 function Bar({ label, value, scale, tone }: { label: string; value: string | null; scale: string; tone: string }) {
   return (
-    <div className="grid grid-cols-[7rem_1fr_9rem] items-center gap-3 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <div className="h-2.5 overflow-hidden rounded-sm bg-surface-muted">
-        <div className={cn('h-full rounded-sm', tone)} style={{ width: `${shareOf(value, scale)}%` }} />
+    <div className="grid grid-cols-[6rem_1fr] items-center gap-x-3 gap-y-1 text-sm sm:grid-cols-[7rem_1fr_9rem]">
+      <span className="flex items-center gap-2 text-muted-foreground">
+        <span className={cn('size-2 rounded-full', tone)} aria-hidden />
+        {label}
+      </span>
+      <div className="h-2.5 overflow-hidden rounded-full bg-surface-sunken">
+        <div className={cn('h-full rounded-full transition-[width] duration-500', tone)} style={{ width: `${shareOf(value, scale)}%` }} />
       </div>
-      <span className="num text-right font-medium">{value === null ? '—' : formatPHP(value)}</span>
+      <span className="num col-span-2 text-right font-semibold sm:col-span-1">{value === null ? '—' : formatPHP(value)}</span>
     </div>
   );
 }
@@ -135,29 +119,35 @@ export function ProjectFinancial({ project, canSeeBudget }: { project: ProjectDe
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Figure
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Stat
           label="Contract value"
           value={formatPHP(financial.contractValue)}
           hint={financial.contractValueSource === 'CONTRACT' ? 'From the active contract' : 'From the project record'}
+          icon={FileSignature}
+          tone="neutral"
         />
-        <Figure
+        <Stat
           label="Budget"
           value={budgetTotal === null ? '—' : formatPHP(budgetTotal)}
           hint={financial.budget ? `Version ${financial.budget.version}` : 'No budget yet. Approve an estimate on the BOQ tab.'}
+          icon={Wallet}
+          tone="primary"
         />
-        <Figure
+        <Stat
           label="Committed"
           value={financial.committed === null ? '—' : formatPHP(financial.committed)}
           hint={financial.committed === null ? 'Open purchase orders are not visible to your role' : 'Open purchase orders'}
+          icon={ShoppingCart}
+          tone="violet"
         />
-        <Figure label="Actual cost" value={formatPHP(financial.actual)} hint="Posted to the project cost ledger" />
+        <Stat label="Actual cost" value={formatPHP(financial.actual)} hint="Posted to the project cost ledger" icon={Receipt} tone="accent" />
       </div>
       <Panel title="Budget, committed and actual">
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           <Bar label="Budget" value={budgetTotal} scale={scale} tone="bg-primary" />
-          <Bar label="Committed" value={financial.committed} scale={scale} tone="bg-info" />
-          <Bar label="Actual" value={financial.actual} scale={scale} tone="bg-approved" />
+          <Bar label="Committed" value={financial.committed} scale={scale} tone="bg-violet" />
+          <Bar label="Actual" value={financial.actual} scale={scale} tone="bg-accent" />
         </div>
         <dl className="mt-4 grid gap-4 border-t border-border pt-3 text-sm sm:grid-cols-2">
           <div>
@@ -175,7 +165,7 @@ export function ProjectFinancial({ project, canSeeBudget }: { project: ProjectDe
       {canSeeBudget ? (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
-            <h2 className="text-base font-semibold">Budget lines</h2>
+            <h2 className="text-base font-semibold tracking-tight">Budget lines</h2>
             {byCategory.map((entry) => (
               <span key={entry.category} className="text-sm text-muted-foreground">
                 {titleCase(entry.category)} <span className="num font-medium text-foreground">{formatPHP(entry.amount)}</span>

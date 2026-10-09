@@ -12,7 +12,7 @@ export const DrawerTrigger = DialogPrimitive.Trigger;
 export const DrawerClose = DialogPrimitive.Close;
 
 const drawerVariants = cva(
-  'fixed z-50 flex flex-col bg-surface-raised shadow-pop data-[state=open]:animate-in data-[state=closed]:animate-out',
+  'fixed z-50 flex flex-col bg-surface-raised shadow-pop duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out',
   {
     variants: {
       side: {
@@ -43,7 +43,7 @@ export const DrawerContent = React.forwardRef<
 ) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-foreground/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-sidebar/45 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
       <DialogPrimitive.Content
         ref={ref}
         className={cn(drawerVariants({ side }), className)}
@@ -55,7 +55,7 @@ export const DrawerContent = React.forwardRef<
             <DialogDescription className="sr-only">{description ?? title}</DialogDescription>
           </>
         ) : (
-          <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
+          <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
             <div className="min-w-0">
               <DialogTitle>{title}</DialogTitle>
               {description ? (
@@ -65,7 +65,7 @@ export const DrawerContent = React.forwardRef<
               )}
             </div>
             <DialogPrimitive.Close
-              className="rounded p-1 text-muted-foreground hover:bg-surface-muted hover:text-foreground"
+              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground"
               aria-label="Close"
             >
               <X className="size-4" aria-hidden />

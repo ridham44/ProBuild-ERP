@@ -48,7 +48,7 @@ export function WarehousesView() {
         enableSorting: true,
         accessorFn: (row) => row.code,
         cell: ({ row }) => (
-          <Link href={`/inventory/warehouses/${row.original.id}`} className="font-mono text-xs font-medium text-primary hover:underline">
+          <Link href={`/inventory/warehouses/${row.original.id}`} className="doc-link">
             {row.original.code}
           </Link>
         ),

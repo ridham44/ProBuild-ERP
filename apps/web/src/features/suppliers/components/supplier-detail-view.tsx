@@ -9,6 +9,7 @@ import { TextAreaField, TextField } from '@/components/common/form-controls';
 import { ActivityPanel } from '@/components/common/activity-panel';
 import { ContactsPanel } from '@/components/common/contacts-panel';
 import { QueryErrorState } from '@/components/common/error-state';
+import { DetailPageSkeleton } from '@/components/common/page-skeleton';
 import { PageHeader } from '@/components/common/page-header';
 import { DetailList, Panel } from '@/components/common/panel';
 import { StatusBadge } from '@/components/common/status-badge';
@@ -25,7 +26,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/toast';
 import { useCan } from '@/features/auth/components/current-user';
@@ -307,11 +307,7 @@ export function SupplierDetailView({ id }: { id: string }) {
   return (
     <PermissionGate module="parties.supplier">
       {supplier.isPending ? (
-        <div className="space-y-4" role="status" aria-label="Loading supplier">
-          <Skeleton className="h-7 w-64" />
-          <Skeleton className="h-4 w-96" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <DetailPageSkeleton label="Loading supplier" />
       ) : supplier.isError || !data ? (
         <QueryErrorState error={supplier.error} onRetry={() => void supplier.refetch()} />
       ) : (

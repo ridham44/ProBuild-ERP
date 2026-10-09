@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, Plus } from 'lucide-react';
+import { Barcode, CalendarClock, Layers, Package, Plus, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -33,6 +33,8 @@ function trackingQuery(filters: Record<string, string | undefined>): Record<stri
   return out;
 }
 
+const TRACKING_ICONS: Record<string, LucideIcon> = { Batch: Layers, Serial: Barcode, Expiry: CalendarClock };
+
 export function ItemsView() {
   const router = useRouter();
   const canCreate = useCan('inventory.item', 'CREATE');
@@ -57,7 +59,7 @@ export function ItemsView() {
         cell: ({ row }) => (
           <Link
             href={`/inventory/items/${row.original.id}`}
-            className="font-mono text-xs font-medium text-primary hover:underline"
+            className="doc-link"
           >
             {row.original.sku}
           </Link>
@@ -71,7 +73,7 @@ export function ItemsView() {
         accessorFn: (row) => row.name,
         cell: ({ row }) => (
           <div className="min-w-0">
-            <p className="font-medium">{row.original.name}</p>
+            <p className="max-w-80 truncate font-medium">{row.original.name}</p>
             {row.original.specification ? (
               <p className="max-w-80 truncate text-xs text-muted-foreground">{row.original.specification}</p>
             ) : null}
@@ -90,7 +92,11 @@ export function ItemsView() {
         id: 'unit',
         header: 'Unit',
         accessorFn: (row) => row.baseUnit,
-        cell: ({ row }) => <span className="font-mono text-xs">{row.original.baseUnit}</span>,
+        cell: ({ row }) => (
+          <span className="rounded bg-surface-sunken px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+            {row.original.baseUnit}
+          </span>
+        ),
       },
       {
         id: 'tracking',
@@ -101,11 +107,15 @@ export function ItemsView() {
             <span className="text-muted-foreground">—</span>
           ) : (
             <span className="flex gap-1">
-              {labels.map((label) => (
-                <Badge key={label} tone="info">
-                  {label}
-                </Badge>
-              ))}
+              {labels.map((label) => {
+                const Icon = TRACKING_ICONS[label] ?? Layers;
+                return (
+                  <Badge key={label} tone="accent">
+                    <Icon className="size-3" aria-hidden />
+                    {label}
+                  </Badge>
+                );
+              })}
             </span>
           );
         },
@@ -114,7 +124,7 @@ export function ItemsView() {
       {
         id: 'costing',
         header: 'Valuation',
-        cell: ({ row }) => costingLabel(row.original.costingMethod),
+        cell: ({ row }) => <span className="text-muted-foreground">{costingLabel(row.original.costingMethod)}</span>,
         meta: { hideBelow: 'lg' },
       },
       {
@@ -131,7 +141,11 @@ export function ItemsView() {
         accessorFn: (row) => Number(row.lastPurchaseCost),
         enableSorting: true,
         cell: ({ row }) =>
-          Number(row.original.lastPurchaseCost) > 0 ? formatPHP(row.original.lastPurchaseCost) : '—',
+          Number(row.original.lastPurchaseCost) > 0 ? (
+            <span className="font-medium">{formatPHP(row.original.lastPurchaseCost)}</span>
+          ) : (
+            <span className="text-subtle-foreground">—</span>
+          ),
         meta: { numeric: true, hideBelow: 'md' },
       },
       {

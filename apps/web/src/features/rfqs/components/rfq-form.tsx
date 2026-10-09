@@ -199,7 +199,7 @@ export function RfqForm({ rfq }: { rfq: RfqDetail | null }) {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-surface-muted text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <thead className="bg-surface-muted text-left text-xs font-semibold text-muted-foreground">
                     <tr>
                       <th className="w-10 px-3 py-2" />
                       <th className="px-2 py-2 font-medium">Item</th>

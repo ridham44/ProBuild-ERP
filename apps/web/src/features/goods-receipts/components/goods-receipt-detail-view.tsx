@@ -10,7 +10,10 @@ import type { DataColumn } from '@/components/common/data-table/column-meta';
 import { DataTable } from '@/components/common/data-table/data-table';
 import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
+import { DetailPageSkeleton } from '@/components/common/page-skeleton';
+import { StackedBar } from '@/components/common/meter';
 import { PageHeader } from '@/components/common/page-header';
+import { SummaryStrip, type SummaryFact } from '@/components/common/summary-strip';
 import { DetailList, Panel } from '@/components/common/panel';
 import { ReasonDialog } from '@/components/common/reason-dialog';
 import { StatusBadge } from '@/components/common/status-badge';
@@ -18,7 +21,6 @@ import { UrlTabs } from '@/components/common/url-tabs';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { useCan } from '@/features/auth/components/current-user';
 import { PermissionGate } from '@/features/auth/components/permission-gate';
@@ -38,6 +40,7 @@ import {
   availableGrnActions,
   latestInspection,
   needsQuarantineDecision,
+  qcOutcomeCounts,
   QC_RESULT_LABELS,
   QC_RESULT_TONES,
   quantityUnderInspection,
@@ -45,25 +48,28 @@ import {
 } from '../model';
 import { QcDialog, type QcMode } from './qc-dialog';
 
-function SummaryStrip({ receipt }: { receipt: GoodsReceiptDetail }) {
-  const items: Array<{ label: string; value: React.ReactNode }> = [
+function KeyFacts({ receipt }: { receipt: GoodsReceiptDetail }) {
+  const items: SummaryFact[] = [
     { label: 'Purchase order', value: <Link href={`/procurement/orders/${receipt.orderId}`} className="font-mono hover:underline">{receipt.order.number}</Link> },
     { label: 'Supplier', value: <Link href={`/procurement/suppliers/${receipt.supplierId}`} className="hover:underline">{receipt.supplier.name}</Link> },
     { label: 'Project', value: <Link href={`/projects/${receipt.project.id}`} className="hover:underline">{receipt.project.name}</Link> },
     { label: 'Warehouse', value: receipt.warehouse.name },
     { label: 'Received', value: formatDate(receipt.receiptDate) },
     { label: 'Received by', value: receipt.receivedBy?.name ?? '—' },
+    {
+      label: 'QC by line',
+      value: (
+        <span className="flex flex-wrap gap-1">
+          {qcOutcomeCounts(receipt.lines).map((entry) => (
+            <Badge key={entry.result} tone={QC_RESULT_TONES[entry.result]}>
+              <span className="num">{entry.count}</span> {QC_RESULT_LABELS[entry.result]}
+            </Badge>
+          ))}
+        </span>
+      ),
+    },
   ];
-  return (
-    <dl className="mb-5 grid gap-x-6 gap-y-2 rounded-lg border border-border bg-surface px-4 py-3 text-sm sm:grid-cols-3 lg:grid-cols-6">
-      {items.map((item) => (
-        <div key={item.label} className="min-w-0">
-          <dt className="text-xs text-muted-foreground">{item.label}</dt>
-          <dd className="mt-0.5 truncate font-medium">{item.value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
+  return <SummaryStrip facts={items} />;
 }
 
 function QcSummary({ receipt, line }: { receipt: GoodsReceiptDetail; line: GoodsReceiptLine }) {
@@ -80,8 +86,19 @@ function QcSummary({ receipt, line }: { receipt: GoodsReceiptDetail; line: Goods
     );
   }
   return (
-    <div className="space-y-0.5">
+    <div className="min-w-40 space-y-1.5">
       <Badge tone={QC_RESULT_TONES[line.qcResult]}>{QC_RESULT_LABELS[line.qcResult]}</Badge>
+      {Number(line.receivedQty) > 0 ? (
+        <StackedBar
+          label={`${line.item.name} disposition`}
+          total={Number(line.receivedQty)}
+          segments={[
+            { label: 'Accepted', value: Number(line.acceptedQty), tone: 'success' },
+            { label: 'Quarantine', value: Number(line.quarantineQty), tone: 'warning' },
+            { label: 'Rejected', value: Number(line.rejectedQty), tone: 'danger' },
+          ]}
+        />
+      ) : null}
       {needsQuarantineDecision(line) ? (
         <p className="text-xs text-warning">{formatQty(line.quarantineOpenQty, line.unit)} awaiting a decision</p>
       ) : null}
@@ -287,10 +304,7 @@ export function GoodsReceiptDetailView({ id }: { id: string }) {
   return (
     <PermissionGate module="procurement.receipt">
       {query.isPending ? (
-        <div className="space-y-4" role="status" aria-label="Loading goods receipt">
-          <Skeleton className="h-7 w-72" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <DetailPageSkeleton label="Loading goods receipt" />
       ) : query.isError || !receipt || !actions ? (
         <QueryErrorState error={query.error} onRetry={() => void query.refetch()} />
       ) : (
@@ -332,7 +346,7 @@ export function GoodsReceiptDetailView({ id }: { id: string }) {
               {awaitingDecision} {awaitingDecision === 1 ? 'line holds' : 'lines hold'} stock in quarantine. Release it to available stock or reject it back to the supplier.
             </Alert>
           ) : null}
-          <SummaryStrip receipt={receipt} />
+          <KeyFacts receipt={receipt} />
           <UrlTabs
             label="Goods receipt sections"
             tabs={[

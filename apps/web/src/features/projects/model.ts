@@ -4,7 +4,7 @@ import {
   PROJECT_TYPES,
   type ProjectStatusKey,
 } from '@probuild/shared';
-import { titleCase } from '@/lib/format';
+import { isBeforeManilaToday, titleCase } from '@/lib/format';
 
 export const PROJECT_TYPE_OPTIONS = PROJECT_TYPES.map((value) => ({ value, label: titleCase(value) }));
 export const PROJECT_STATUS_OPTIONS = PROJECT_STATUSES.map((value) => ({ value, label: titleCase(value) }));
@@ -68,4 +68,24 @@ export function shareOf(value: string | number | null | undefined, total: string
   const denominator = Number(total);
   if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) return 0;
   return Math.max(0, Math.min(100, (numerator / denominator) * 100));
+}
+
+/** Statuses that mean the job is finished or abandoned, so a passed finish date is no longer a risk. */
+const PROJECT_DONE_STATUSES: ReadonlySet<string> = new Set(['COMPLETED', 'CLOSED', 'CANCELLED']);
+
+/** The finish date currently in force: the revised date when the schedule has been re-baselined. */
+export function projectTargetFinish(project: {
+  revisedEndDate: string | null;
+  originalEndDate: string | null;
+}): string | null {
+  return project.revisedEndDate ?? project.originalEndDate;
+}
+
+/** Overdue means the target finish has passed while the project is still open; low progress alone never is. */
+export function isProjectOverdue(
+  project: { status: string; revisedEndDate: string | null; originalEndDate: string | null },
+  now: Date = new Date(),
+): boolean {
+  if (PROJECT_DONE_STATUSES.has(project.status)) return false;
+  return isBeforeManilaToday(projectTargetFinish(project), now);
 }
