@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "vercel-build": "prisma generate && pnpm --filter @probuild/shared build && nest build",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
     "lint": "eslint src test",

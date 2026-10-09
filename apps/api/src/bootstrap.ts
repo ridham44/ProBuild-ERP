@@ -10,6 +10,7 @@ import { Logger } from 'nestjs-pino';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { AppModule } from './app.module';
 import { AppConfig } from './config/config.service';
+import { stripPublicPrefix } from './strip-public-prefix';
 
 /**
  * Cookie sessions are immune to cross-site writes only if cross-origin browsers are refused.
@@ -42,6 +43,12 @@ export async function createApp(options: { abortOnError?: boolean } = {}): Promi
 
   const sentryDsn = config.get('SENTRY_DSN');
   if (sentryDsn) Sentry.init({ dsn: sentryDsn, environment: config.get('NODE_ENV') });
+
+  // Behind the Vercel route /api/* the original path arrives intact; the app itself serves /v1/* and /health.
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    req.url = stripPublicPrefix(req.url) ?? req.url;
+    next();
+  });
 
   const origins = config.get('WEB_ORIGINS');
   app.use(helmet());

@@ -520,6 +520,50 @@ describe('Material request, issue, return and project cost', () => {
       expect(dash.actual).toBe(Number(sum._sum.totalCost).toFixed(2));
     });
 
+    it('material cost counts only material issues less returns, never other project cost', async () => {
+      const url = `/v1/projects/${w.project.id}/material-cost`;
+      const read = async () => (await expectOk<Json>(await w.admin.get(url), 200)) as Json & { issued: string; returned: string; actual: string; lines: Array<Json & { costCode: { id: string } | null }> };
+      const before = await read();
+
+      const item = await createItem(w.admin, uniq('MCO'), { baseUnit: 'pc' });
+      await stockUp(w, a, [{ itemId: item.id, qty: '20', unitPrice: '10' }]);
+      const mr = await approvedMr(item.id as string, '10');
+      const issue = await expectOk<Mi>(await issueFrom(a.ws, mr.id as string), 201);
+      const issued = (await postIssue(a.ws, issue.id)).body as Mi;
+      const afterIssue = await read();
+      expect(Number(afterIssue.issued) - Number(before.issued)).toBe(100);
+      expect(Number(afterIssue.actual) - Number(before.actual)).toBe(100);
+
+      // spend that is not material is part of total project cost but must not appear here
+      const user = await ctx.prisma.user.findFirstOrThrow({ where: { companyId: w.company.id } });
+      await ctx.prisma.projectCostLedger.create({
+        data: { companyId: w.company.id, projectId: w.project.id, costCodeId: dims.costCode.id, costCategory: 'LABOR', txnType: 'PAYROLL', txnDate: new Date(), totalCost: '7777', sourceType: 'TEST', sourceId: uniq('payroll'), userId: user.id },
+      });
+      expect((await read()).actual).toBe(afterIssue.actual);
+
+      const ret = await expectOk<Json>(
+        await a.ws.post('/v1/material-returns').send({ issueId: issue.id, reason: 'Surplus', lines: [{ issueLineId: (issued.lines[0] as Json).id, qty: '4', condition: 'GOOD' }] }),
+        201,
+      );
+      await expectOk(await a.ws.post(`/v1/material-returns/${ret.id}/post`).set('Idempotency-Key', idemKey()).send({}), 200);
+      const afterReturn = await read();
+      expect(Number(afterReturn.returned) - Number(before.returned)).toBe(40);
+      expect(Number(afterReturn.actual) - Number(before.actual)).toBe(60);
+      const row = afterReturn.lines.find((l) => l.costCode?.id === dims.costCode.id) as Json & { issued: string; returned: string; actual: string };
+      expect(Number(row.actual)).toBe(Number(row.issued) - Number(row.returned));
+
+      // total project cost keeps the payroll row, so the two figures differ
+      const total = (await w.admin.get(`/v1/projects/${w.project.id}/budget-vs-actual`)).body.totals.actual;
+      expect(Number(total)).toBeGreaterThanOrEqual(Number(afterReturn.actual) + 7777);
+
+      await expectOk(await a.wm.post(`/v1/material-returns/${ret.id}/cancel`).set('Idempotency-Key', idemKey()).send({ reason: 'Counted twice' }), 200);
+      expect((await read()).actual).toBe(afterIssue.actual);
+
+      expect((await ctx.http().get(url)).status).toBe(401);
+      expect((await rival.admin.get(url)).status).toBe(404);
+      expect((await w.viewer.get(url)).status).toBe(403);
+    });
+
     it('is permission- and tenant-scoped', async () => {
       expect((await ctx.http().get(`/v1/projects/${w.project.id}/budget-vs-actual`)).status).toBe(401);
       expect((await rival.admin.get(`/v1/projects/${w.project.id}/budget-vs-actual`)).status).toBe(404);

@@ -1,8 +1,8 @@
 const PUBLIC_PREFIX = '/api';
 
 /**
- * On Vercel the public route is /api/*, and the original path is passed through to the function.
- * The app itself serves /v1/* and /health, so the prefix is removed before Express sees the request.
+ * On Vercel the public route is /api/*, and the original path is passed through to the service.
+ * The app itself serves /v1/* and /health, so the prefix is removed before routing.
  */
 export function stripPublicPrefix(url: string | undefined): string | undefined {
   if (!url) return url;
