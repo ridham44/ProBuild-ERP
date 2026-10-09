@@ -16,6 +16,8 @@ RUN pnpm --filter @probuild/api exec prisma generate \
 RUN pnpm --filter @probuild/api deploy --prod --legacy /out \
  && cp -r apps/api/dist /out/dist \
  && cp -r apps/api/prisma /out/prisma
+# deploy installs a fresh @prisma/client without the generated client, so generate again inside /out.
+RUN cd /out && /repo/apps/api/node_modules/.bin/prisma generate --schema ./prisma/schema
 
 FROM base AS runtime
 ENV NODE_ENV=production
