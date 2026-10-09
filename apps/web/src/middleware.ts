@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 const SESSION_COOKIE = 'pb_session';
-const PUBLIC_PATHS = ['/login', '/reset-password'];
+const PUBLIC_PATHS = ['/home', '/login', '/reset-password'];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -18,8 +18,9 @@ export function middleware(request: NextRequest) {
 
   if (!isPublic(pathname) && !request.cookies.has(SESSION_COOKIE)) {
     const url = request.nextUrl.clone();
-    url.pathname = '/login';
     url.search = '';
+    // Signed-out visitors to the root see the public home page; deep links go to sign-in and come back.
+    url.pathname = pathname === '/' ? '/home' : '/login';
     if (pathname !== '/') url.searchParams.set('next', `${pathname}${search}`);
     return NextResponse.redirect(url);
   }
