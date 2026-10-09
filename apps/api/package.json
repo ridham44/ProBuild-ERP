@@ -15,6 +15,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:seed:demo": "tsx prisma/seed-demo.ts",
+    "prisma:seed:demo-data": "tsx prisma/seed-demo-data.ts",
     "openapi:generate": "nest build && node dist/cli/generate-openapi.js"
   },
   "prisma": {
