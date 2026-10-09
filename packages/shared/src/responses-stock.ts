@@ -210,3 +210,15 @@ export const budgetVsActualResponseSchema = z.object({
     budget: dec, committed: dec.nullable(), actual: dec.nullable(), variance: dec, utilisationPct: dec.nullable(), unbudgeted: z.boolean(),
   })),
 });
+
+/** Material cost only: issues and returns from the project cost ledger. Total project cost lives in budget-vs-actual. */
+export const materialCostResponseSchema = z.object({
+  projectId: id,
+  issued: dec,
+  returned: dec,
+  actual: dec,
+  lines: z.array(z.object({
+    costCode: z.object({ id, code: z.string(), name: z.string(), category: z.string() }).nullable(),
+    issued: dec, returned: dec, actual: dec,
+  })),
+});

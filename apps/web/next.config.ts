@@ -16,6 +16,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // The Vercel services setup does not serve /_next/image, so images are served as the static files they are.
+  images: { unoptimized: true },
   // Linting is its own gate (pnpm lint); the build does not repeat it.
   eslint: { ignoreDuringBuilds: true },
   transpilePackages: ['@probuild/shared', '@probuild/api-client'],

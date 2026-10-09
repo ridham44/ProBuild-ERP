@@ -99,4 +99,44 @@ export class ProjectCostService {
       lines,
     };
   }
+
+  /**
+   * Material actual cost only: MATERIAL_ISSUE and MATERIAL_RETURN rows of the project cost ledger. Reversals keep the
+   * txnType of the row they negate, so a cancelled issue nets out of "issued" and a cancelled return out of "returned".
+   * Returns are stored as negative cost; they are reported as a positive amount and subtracted to give actual.
+   */
+  async materialCost(user: SessionUser, projectId: string) {
+    const project = await this.projectAccess.load(user, projectId, 'projects.budget', 'VIEW');
+    const showActual = this.access.can(user, 'finance.ledger', 'VIEW', { projectId }) || this.access.can(user, 'projects.budget', 'VIEW', { projectId });
+    const rows = showActual
+      ? await this.prisma.projectCostLedger.groupBy({
+          by: ['costCodeId', 'txnType'],
+          where: { companyId: user.companyId, projectId, txnType: { in: ['MATERIAL_ISSUE', 'MATERIAL_RETURN'] } },
+          _sum: { totalCost: true },
+        })
+      : [];
+
+    const byCode = new Map<string, { issued: ReturnType<typeof dec>; returned: ReturnType<typeof dec> }>();
+    for (const r of rows) {
+      const key = r.costCodeId ?? 'none';
+      const entry = byCode.get(key) ?? { issued: ZERO, returned: ZERO };
+      const amount = r._sum.totalCost ?? ZERO;
+      if (r.txnType === 'MATERIAL_ISSUE') entry.issued = entry.issued.plus(amount);
+      else entry.returned = entry.returned.plus(amount.neg());
+      byCode.set(key, entry);
+    }
+
+    const codes = await this.prisma.costCode.findMany({
+      where: { id: { in: [...byCode.keys()].filter((k) => k !== 'none') }, companyId: user.companyId },
+      select: { id: true, code: true, name: true, category: true },
+    });
+    const codeById = new Map(codes.map((c) => [c.id, c]));
+
+    const lines = [...byCode.entries()]
+      .map(([key, v]) => ({ costCode: codeById.get(key) ?? null, issued: v.issued.toFixed(2), returned: v.returned.toFixed(2), actual: v.issued.minus(v.returned).toFixed(2) }))
+      .sort((a, b) => (a.costCode?.code ?? '~').localeCompare(b.costCode?.code ?? '~'));
+    const issued = [...byCode.values()].reduce((s, v) => s.plus(v.issued), ZERO);
+    const returned = [...byCode.values()].reduce((s, v) => s.plus(v.returned), ZERO);
+    return { projectId: project.id, issued: issued.toFixed(2), returned: returned.toFixed(2), actual: issued.minus(returned).toFixed(2), lines };
+  }
 }

@@ -15,7 +15,7 @@ export const projectKeys = {
   boq: (id: string, filters: ProjectFilters) => [...projectKeys.detail(id), 'boq', filters] as const,
   boqAll: (id: string) => [...projectKeys.detail(id), 'boq'] as const,
   budget: (id: string) => [...projectKeys.detail(id), 'budget'] as const,
-  costVsBudget: (id: string) => [...projectKeys.detail(id), 'budget-vs-actual'] as const,
+  materialCost: (id: string) => [...projectKeys.detail(id), 'material-cost'] as const,
 };
 
 export const costCodeKeys = {

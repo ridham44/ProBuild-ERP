@@ -21,6 +21,7 @@ import { Returns } from '../../common/decorators/api-docs';
 import {
   ActivityItemDto,
   BudgetVsActualDto,
+  MaterialCostDto,
   MaterialIssueDetailDto,
   MaterialIssuePageDto,
   MaterialRequestDetailDto,
@@ -254,5 +255,12 @@ export class ProjectCostController {
   @RequirePermission('projects.budget', 'VIEW')
   budgetVsActual(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string, @Query() query: BudgetVsActualQueryDto) {
     return this.cost.budgetVsActual(user, id, query);
+  }
+
+  @Get(':id/material-cost')
+  @Returns(MaterialCostDto)
+  @RequirePermission('projects.budget', 'VIEW')
+  materialCost(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.cost.materialCost(user, id);
   }
 }

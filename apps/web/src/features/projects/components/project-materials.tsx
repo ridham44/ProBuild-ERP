@@ -13,8 +13,7 @@ import { useMaterialIssues } from '@/features/material-issues/api/hooks';
 import { useMaterialRequests } from '@/features/material-requests/api/hooks';
 import { documentStatusKey } from '@/features/material-requests/model';
 import { formatDate, formatPHP } from '@/lib/format';
-import { cn } from '@/lib/utils';
-import { useBudgetVsActual } from '../api/hooks';
+import { useMaterialCost } from '../api/hooks';
 
 const LIMIT = 8;
 
@@ -66,32 +65,50 @@ function Section({
 }
 
 function CostSummary({ projectId }: { projectId: string }) {
-  const cost = useBudgetVsActual(projectId);
+  const cost = useMaterialCost(projectId);
   if (cost.isPending) return <Skeleton className="h-24" />;
   if (cost.isError) return <QueryErrorState error={cost.error} onRetry={() => void cost.refetch()} compact />;
-  const { totals, budget } = cost.data;
-  const over = Number(totals.variance) < 0;
-  const figures: Array<{ label: string; value: string | null; tone?: 'danger' }> = [
-    { label: 'Budget', value: totals.budget },
-    { label: 'Committed on open orders', value: totals.committed },
-    { label: 'Actual cost to date', value: totals.actual },
-    { label: 'Remaining', value: totals.variance, ...(over ? { tone: 'danger' as const } : {}) },
+  const { issued, returned, actual, lines } = cost.data;
+  const figures = [
+    { label: 'Material actual cost', value: actual },
+    { label: 'Issued to project', value: issued },
+    { label: 'Returned to stock', value: returned },
   ];
   return (
     <Panel
-      title="Material cost against budget"
-      description={budget ? `Current budget, version ${budget.version}. Actual cost includes material issued to the project.` : 'This project has no current budget.'}
+      title="Material cost"
+      description="Material issued to this project less material returned. Total project cost, including labour and other spend, is on the Financial tab."
     >
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-3">
         {figures.map((figure) => (
           <div key={figure.label} className="rounded-lg border border-border bg-surface px-4 py-3">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{figure.label}</p>
-            <p className={cn('num mt-1 text-xl font-semibold leading-tight', figure.tone === 'danger' && 'text-danger')}>
-              {figure.value === null ? '—' : formatPHP(figure.value)}
-            </p>
+            <p className="num mt-1 text-xl font-semibold leading-tight">{formatPHP(figure.value)}</p>
           </div>
         ))}
       </div>
+      {lines.length > 0 ? (
+        <table className="mt-4 w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="py-1 font-medium">Cost code</th>
+              <th className="py-1 text-right font-medium">Issued</th>
+              <th className="py-1 text-right font-medium">Returned</th>
+              <th className="py-1 text-right font-medium">Material actual cost</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {lines.map((line) => (
+              <tr key={line.costCode?.id ?? 'none'}>
+                <td className="py-1.5">{line.costCode ? `${line.costCode.code} ${line.costCode.name}` : 'No cost code'}</td>
+                <td className="num py-1.5 text-right">{formatPHP(line.issued)}</td>
+                <td className="num py-1.5 text-right">{formatPHP(line.returned)}</td>
+                <td className="num py-1.5 text-right font-medium">{formatPHP(line.actual)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : null}
     </Panel>
   );
 }

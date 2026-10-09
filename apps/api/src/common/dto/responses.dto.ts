@@ -54,7 +54,8 @@ import {
   updatedCountSchema, userResponseSchema, warehouseListRowSchema, warehouseLocationResponseSchema, warehouseResponseSchema,
 } from '@probuild/shared';
 import {
-  adjustmentDetailResponseSchema, adjustmentListRowSchema, batchRowSchema, budgetVsActualResponseSchema, countDetailResponseSchema, countListRowSchema,
+  adjustmentDetailResponseSchema, adjustmentListRowSchema, batchRowSchema, budgetVsActualResponseSchema,
+  materialCostResponseSchema, countDetailResponseSchema, countListRowSchema,
   goodsReceiptDetailResponseSchema, goodsReceiptListRowSchema, materialIssueDetailResponseSchema, materialIssueListRowSchema,
   materialRequestDetailResponseSchema, materialRequestListRowSchema, materialReturnDetailResponseSchema, materialReturnListRowSchema, movementRowSchema,
   receivableLinesResponseSchema, reconciliationResponseSchema, serialRowSchema, stockBalanceRowSchema, transferDetailResponseSchema, transferListRowSchema,
@@ -181,3 +182,4 @@ export class MaterialIssuePageDto extends createZodDto(pageOf(materialIssueListR
 export class MaterialReturnDetailDto extends createZodDto(materialReturnDetailResponseSchema) {}
 export class MaterialReturnPageDto extends createZodDto(pageOf(materialReturnListRowSchema)) {}
 export class BudgetVsActualDto extends createZodDto(budgetVsActualResponseSchema) {}
+export class MaterialCostDto extends createZodDto(materialCostResponseSchema) {}

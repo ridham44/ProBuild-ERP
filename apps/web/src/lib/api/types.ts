@@ -5,7 +5,7 @@ import type {
   approvalWorkflowResponseSchema,
   boqListRowSchema,
   branchResponseSchema,
-  budgetVsActualResponseSchema,
+  materialCostResponseSchema,
   budgetDetailResponseSchema,
   budgetResponseSchema,
   companyResponseSchema,
@@ -156,7 +156,7 @@ export type MaterialRequestLine = MaterialRequestDetail['lines'][number];
 export type MaterialIssueRow = Out<typeof materialIssueListRowSchema>;
 export type MaterialIssueDetail = Out<typeof materialIssueDetailResponseSchema>;
 export type MaterialIssueLine = MaterialIssueDetail['lines'][number];
-export type BudgetVsActual = Out<typeof budgetVsActualResponseSchema>;
+export type MaterialCost = Out<typeof materialCostResponseSchema>;
 
 export type ApprovalFilters = {
   status?: ApprovalStatusKey;

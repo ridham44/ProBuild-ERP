@@ -3044,6 +3044,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/projects/{id}/material-cost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ProjectCostController_materialCost"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -7480,6 +7496,23 @@ export interface components {
                 variance: string;
                 utilisationPct: string | null;
                 unbudgeted: boolean;
+            }[];
+        };
+        MaterialCostDto: {
+            projectId: string;
+            issued: string;
+            returned: string;
+            actual: string;
+            lines: {
+                costCode: {
+                    id: string;
+                    code: string;
+                    name: string;
+                    category: string;
+                } | null;
+                issued: string;
+                returned: string;
+                actual: string;
             }[];
         };
         ProblemDetails: {
@@ -27208,6 +27241,81 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BudgetVsActualDto"];
+                };
+            };
+            /** @description Validation failed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not signed in or session expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Permission denied */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict (duplicate or stale state) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Business rule violated */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ProjectCostController_materialCost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaterialCostDto"];
                 };
             };
             /** @description Validation failed */
