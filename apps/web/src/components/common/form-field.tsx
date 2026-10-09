@@ -1,5 +1,6 @@
 'use client';
 
+import { CircleAlert } from 'lucide-react';
 import * as React from 'react';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -35,7 +36,7 @@ export function FormField({
   const describedBy =
     [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined;
   return (
-    <div className={cn('flex flex-col gap-1', wide && 'sm:col-span-2', className)}>
+    <div className={cn('flex flex-col gap-1.5', wide && 'sm:col-span-2', className)}>
       <Label htmlFor={id} required={required}>
         {label}
       </Label>
@@ -46,7 +47,8 @@ export function FormField({
         </p>
       ) : null}
       {error ? (
-        <p id={errorId} className="text-xs font-medium text-danger">
+        <p id={errorId} className="flex items-start gap-1 text-xs font-medium text-danger">
+          <CircleAlert className="mt-px size-3.5 shrink-0" aria-hidden />
           {error}
         </p>
       ) : null}
