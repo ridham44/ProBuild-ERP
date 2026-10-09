@@ -34,7 +34,7 @@ function Availability({ row }: { row: StockBalanceRow }) {
   const available = Number(row.available);
   const overReserved = available < 0;
   return (
-    <div className="ml-auto w-36 space-y-1">
+    <div className="ml-auto w-28 space-y-1">
       <p className={overReserved ? 'font-semibold text-danger' : 'font-semibold'}>
         {formatQty(row.available, row.baseUnit)}
       </p>
@@ -125,10 +125,15 @@ export function StockView() {
         header: 'Level',
         cell: ({ row }) =>
           row.original.belowMinimum ? (
-            <Badge tone="warning">
-              <AlertTriangle className="size-3" aria-hidden />
-              Below min. <span className="num">{formatQty(row.original.minStock)}</span>
-            </Badge>
+            <div className="space-y-0.5">
+              <Badge tone="warning">
+                <AlertTriangle className="size-3" aria-hidden />
+                Below min.
+              </Badge>
+              <p className="text-xs text-muted-foreground">
+                Min. <span className="num">{formatQty(row.original.minStock)}</span>
+              </p>
+            </div>
           ) : Number(row.original.minStock) > 0 ? (
             <span className="text-xs text-subtle-foreground">
               Min. <span className="num">{formatQty(row.original.minStock)}</span>
