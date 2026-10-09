@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
 import { TextAreaField, TextField } from '@/components/common/form-controls';
+import { Meter, type MeterTone } from '@/components/common/meter';
 import { Panel } from '@/components/common/panel';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -34,12 +35,26 @@ function score(value: string | null): string {
   return value === null ? EMPTY_VALUE : Number(value).toFixed(1);
 }
 
-function Metric({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
+function Metric({
+  label,
+  value,
+  hint,
+  meter,
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+  /** A 0–100 rate or score to show as a bar under the figure; omitted when there is no data. */
+  meter?: { value: string | null | undefined; tone: MeterTone };
+}) {
   return (
     <div className="min-w-0">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="num mt-0.5 text-lg font-semibold leading-tight">{value}</dd>
-      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      {meter && meter.value !== null && meter.value !== undefined ? (
+        <Meter value={meter.value} label={label} tone={meter.tone} showValue={false} className="mt-1.5" />
+      ) : null}
+      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }
@@ -61,10 +76,11 @@ function Metrics({ data }: { data: SupplierPerformance }) {
           <Metric
             label="On time"
             value={pct(data.delivery.onTimeRatePct)}
+            meter={{ value: data.delivery.onTimeRatePct, tone: 'accent' }}
             hint={data.delivery.receiptCount > 0 ? `${data.delivery.onTimeCount} of ${data.delivery.receiptCount}` : 'No receipts yet'}
           />
           <Metric label="Received qty" value={formatQty(data.quality.receivedQty)} />
-          <Metric label="Rejection rate" value={pct(data.quality.rejectionRatePct)} />
+          <Metric label="Rejection rate" value={pct(data.quality.rejectionRatePct)} meter={{ value: data.quality.rejectionRatePct, tone: 'danger' }} />
         </dl>
       </Panel>
       <Panel title="Sourcing" description="Response to RFQs.">
@@ -72,8 +88,8 @@ function Metrics({ data }: { data: SupplierPerformance }) {
           <Metric label="RFQs invited" value={data.sourcing.rfqsInvited} />
           <Metric label="Quotes submitted" value={data.sourcing.quotationsSubmitted} />
           <Metric label="Awards" value={data.sourcing.awards} />
-          <Metric label="Response rate" value={pct(data.sourcing.responseRatePct)} />
-          <Metric label="Win rate" value={pct(data.sourcing.winRatePct)} />
+          <Metric label="Response rate" value={pct(data.sourcing.responseRatePct)} meter={{ value: data.sourcing.responseRatePct, tone: 'primary' }} />
+          <Metric label="Win rate" value={pct(data.sourcing.winRatePct)} meter={{ value: data.sourcing.winRatePct, tone: 'primary' }} />
         </dl>
       </Panel>
       <Panel
@@ -85,12 +101,12 @@ function Metrics({ data }: { data: SupplierPerformance }) {
         }
       >
         <dl className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-          <Metric label="Overall" value={score(data.evaluations.averages?.overall ?? null)} />
-          <Metric label="Price" value={score(data.evaluations.averages?.price ?? null)} />
-          <Metric label="Quality" value={score(data.evaluations.averages?.quality ?? null)} />
-          <Metric label="Delivery" value={score(data.evaluations.averages?.delivery ?? null)} />
-          <Metric label="Response" value={score(data.evaluations.averages?.responsiveness ?? null)} />
-          <Metric label="Compliance" value={score(data.evaluations.averages?.compliance ?? null)} />
+          <Metric label="Overall" value={score(data.evaluations.averages?.overall ?? null)} meter={{ value: data.evaluations.averages?.overall, tone: 'violet' }} />
+          <Metric label="Price" value={score(data.evaluations.averages?.price ?? null)} meter={{ value: data.evaluations.averages?.price, tone: 'violet' }} />
+          <Metric label="Quality" value={score(data.evaluations.averages?.quality ?? null)} meter={{ value: data.evaluations.averages?.quality, tone: 'violet' }} />
+          <Metric label="Delivery" value={score(data.evaluations.averages?.delivery ?? null)} meter={{ value: data.evaluations.averages?.delivery, tone: 'violet' }} />
+          <Metric label="Response" value={score(data.evaluations.averages?.responsiveness ?? null)} meter={{ value: data.evaluations.averages?.responsiveness, tone: 'violet' }} />
+          <Metric label="Compliance" value={score(data.evaluations.averages?.compliance ?? null)} meter={{ value: data.evaluations.averages?.compliance, tone: 'violet' }} />
         </dl>
       </Panel>
     </div>

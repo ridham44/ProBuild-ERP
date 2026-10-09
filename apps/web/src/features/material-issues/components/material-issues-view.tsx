@@ -1,7 +1,7 @@
 'use client';
 
 import { MI_STATUSES } from '@probuild/shared';
-import { PackageMinus, Plus } from 'lucide-react';
+import { PackageMinus, Plus, Warehouse } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -56,7 +56,17 @@ export function MaterialIssuesView() {
           </div>
         ),
       },
-      { id: 'warehouse', header: 'Issued from', cell: ({ row }) => row.original.warehouse.name, meta: { hideBelow: 'lg' } },
+      {
+        id: 'warehouse',
+        header: 'Issued from',
+        cell: ({ row }) => (
+          <span className="inline-flex items-center gap-1.5">
+            <Warehouse className="size-3.5 shrink-0 text-accent" aria-hidden />
+            {row.original.warehouse.name}
+          </span>
+        ),
+        meta: { hideBelow: 'md' },
+      },
       { id: 'issueDate', header: 'Issued', cell: ({ row }) => formatDate(row.original.issueDate), meta: { hideBelow: 'sm' } },
       { id: 'lines', header: 'Lines', cell: ({ row }) => row.original._count.lines, meta: { numeric: true, hideBelow: 'lg' } },
       { id: 'status', header: 'Status', cell: ({ row }) => <StatusBadge status={row.original.status} /> },

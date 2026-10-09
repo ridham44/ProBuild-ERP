@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/common/empty-state';
 import { QueryErrorState } from '@/components/common/error-state';
 import { DetailPageSkeleton } from '@/components/common/page-skeleton';
 import { PageHeader } from '@/components/common/page-header';
+import { ProgressBar, projectProgressTone } from '@/features/projects/components/progress-bar';
 import { DetailList, Panel } from '@/components/common/panel';
 import { StatusBadge } from '@/components/common/status-badge';
 import { UrlTabs } from '@/components/common/url-tabs';
@@ -69,7 +70,7 @@ function CustomerProjects({ customerId }: { customerId: string }) {
   const items = projects.data.items;
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-surface">
+      <div className="rounded-xl border border-border bg-surface shadow-card">
         <EmptyState
           compact
           icon={FolderKanban}
@@ -80,17 +81,22 @@ function CustomerProjects({ customerId }: { customerId: string }) {
     );
   }
   return (
-    <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
+    <ul className="divide-y divide-border/70 rounded-xl border border-border bg-surface shadow-card">
       {items.map((project) => (
-        <li key={project.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 text-sm">
-          <Link href={`/projects/${project.id}`} className="font-medium text-primary hover:underline">
-            {project.name}
-          </Link>
-          <span className="font-mono text-xs text-muted-foreground">{project.code}</span>
+        <li key={project.id} className="grid gap-x-6 gap-y-2 px-5 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_9rem_9rem] sm:items-center">
+          <div className="min-w-0">
+            <Link href={`/projects/${project.id}`} className="block truncate font-medium text-foreground hover:text-primary hover:underline">
+              {project.name}
+            </Link>
+            <span className="font-mono text-xs text-muted-foreground">{project.code}</span>
+          </div>
           <StatusBadge status={project.status} />
-          <span className="ml-auto flex items-center gap-4 text-muted-foreground">
-            <span>{project.startDate ? `Start ${formatDate(project.startDate)}` : 'No start date'}</span>
-            <span className="num">{formatPHP(project.contractAmount)}</span>
+          <ProgressBar value={project.progressPct} label={`${project.name} progress`} tone={projectProgressTone(project)} />
+          <span className="text-right">
+            <span className="num block font-medium">{formatPHP(project.contractAmount)}</span>
+            <span className="block text-xs text-muted-foreground">
+              {project.startDate ? `Start ${formatDate(project.startDate)}` : 'No start date'}
+            </span>
           </span>
         </li>
       ))}

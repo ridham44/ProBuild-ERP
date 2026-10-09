@@ -1,7 +1,7 @@
 'use client';
 
 import { MR_STATUSES } from '@probuild/shared';
-import { ClipboardCheck, Plus } from 'lucide-react';
+import { ClipboardCheck, Plus, Warehouse } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -55,7 +55,17 @@ export function MaterialRequestsView() {
           </div>
         ),
       },
-      { id: 'warehouse', header: 'Issue from', cell: ({ row }) => row.original.warehouse.name, meta: { hideBelow: 'lg' } },
+      {
+        id: 'warehouse',
+        header: 'Issue from',
+        cell: ({ row }) => (
+          <span className="inline-flex items-center gap-1.5">
+            <Warehouse className="size-3.5 shrink-0 text-accent" aria-hidden />
+            {row.original.warehouse.name}
+          </span>
+        ),
+        meta: { hideBelow: 'md' },
+      },
       { id: 'needed', header: 'Needed by', cell: ({ row }) => formatDate(row.original.neededDate), meta: { hideBelow: 'sm' } },
       { id: 'lines', header: 'Lines', cell: ({ row }) => row.original._count.lines, meta: { numeric: true, hideBelow: 'lg' } },
       { id: 'status', header: 'Status', cell: ({ row }) => <StatusBadge status={documentStatusKey(row.original.status)} /> },

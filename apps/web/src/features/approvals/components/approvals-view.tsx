@@ -18,6 +18,7 @@ import { PermissionGate } from '@/features/auth/components/permission-gate';
 import { APPROVAL_DOCUMENT_TYPES, type ApprovalDocumentType } from '@probuild/shared';
 import type { ApprovalFilters, ApprovalRequestDto, ApprovalStatusKey } from '@/lib/api/types';
 import { formatPHP, formatRelative } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import { useApprovals } from '../api/hooks';
 import { documentHref, documentTypeLabel } from '../model';
 import { ApprovalDetailDrawer } from './approval-detail-drawer';
@@ -82,7 +83,7 @@ export function ApprovalsView() {
         header: 'Amount',
         accessorFn: (request) => Number(request.amount),
         enableSorting: true,
-        cell: ({ row }) => formatPHP(row.original.amount),
+        cell: ({ row }) => <span className="font-medium">{formatPHP(row.original.amount)}</span>,
         meta: { numeric: true },
       },
       {
@@ -95,12 +96,29 @@ export function ApprovalsView() {
         header: 'Waiting on',
         cell: ({ row }) =>
           row.original.status === 'PENDING' ? (
-            <span>
-              <span className="num">
-                {row.original.currentStep} of {row.original.totalSteps}
+            <div className="space-y-1">
+              <span className="flex items-center gap-1" aria-hidden>
+                {Array.from({ length: row.original.totalSteps }, (_, index) => (
+                  <span
+                    key={index}
+                    className={cn(
+                      'h-1.5 w-5 rounded-full',
+                      index < row.original.currentStep - 1
+                        ? 'bg-approved'
+                        : index === row.original.currentStep - 1
+                          ? 'bg-pending'
+                          : 'bg-surface-sunken',
+                    )}
+                  />
+                ))}
               </span>
-              <span className="text-muted-foreground"> · {row.original.currentRole ?? '—'}</span>
-            </span>
+              <p className="text-xs">
+                <span className="num font-medium">
+                  Step {row.original.currentStep} of {row.original.totalSteps}
+                </span>
+                <span className="text-muted-foreground"> · {row.original.currentRole ?? '—'}</span>
+              </p>
+            </div>
           ) : (
             <span className="text-muted-foreground">—</span>
           ),
