@@ -5,6 +5,7 @@ import type {
   approvalWorkflowResponseSchema,
   boqListRowSchema,
   branchResponseSchema,
+  budgetVsActualResponseSchema,
   budgetDetailResponseSchema,
   budgetResponseSchema,
   companyResponseSchema,
@@ -17,10 +18,17 @@ import type {
   estimateApprovalResponseSchema,
   estimateDetailResponseSchema,
   estimateListRowSchema,
+  goodsReceiptDetailResponseSchema,
+  goodsReceiptListRowSchema,
   itemCategoryResponseSchema,
   itemDetailResponseSchema,
   itemListRowSchema,
   itemStockSummaryResponseSchema,
+  materialIssueDetailResponseSchema,
+  materialIssueListRowSchema,
+  materialRequestDetailResponseSchema,
+  materialRequestListRowSchema,
+  movementRowSchema,
   notificationResponseSchema,
   periodResponseSchema,
   priceHistoryRowSchema,
@@ -32,6 +40,7 @@ import type {
   purchaseOrderListRowSchema,
   quotationDetailResponseSchema,
   quotationListRowSchema,
+  receivableLinesResponseSchema,
   requisitionDetailResponseSchema,
   requisitionListRowSchema,
   rfqDetailResponseSchema,
@@ -39,6 +48,7 @@ import type {
   roleAssignmentRowSchema,
   roleResponseSchema,
   sessionResponseSchema,
+  stockBalanceRowSchema,
   supplierDetailResponseSchema,
   supplierEvaluationResponseSchema,
   supplierPerformanceResponseSchema,
@@ -132,6 +142,21 @@ export type QuotationDetail = Out<typeof quotationDetailResponseSchema>;
 export type PurchaseOrderRow = Out<typeof purchaseOrderListRowSchema>;
 export type PurchaseOrderDetail = Out<typeof purchaseOrderDetailResponseSchema>;
 export type PurchaseOrderLine = PurchaseOrderDetail['lines'][number];
+
+export type GoodsReceiptRow = Out<typeof goodsReceiptListRowSchema>;
+export type GoodsReceiptDetail = Out<typeof goodsReceiptDetailResponseSchema>;
+export type GoodsReceiptLine = GoodsReceiptDetail['lines'][number];
+export type QcInspection = GoodsReceiptLine['inspections'][number];
+export type ReceivableLines = Out<typeof receivableLinesResponseSchema>;
+export type StockBalanceRow = Out<typeof stockBalanceRowSchema>;
+export type MovementRow = Out<typeof movementRowSchema>;
+export type MaterialRequestRow = Out<typeof materialRequestListRowSchema>;
+export type MaterialRequestDetail = Out<typeof materialRequestDetailResponseSchema>;
+export type MaterialRequestLine = MaterialRequestDetail['lines'][number];
+export type MaterialIssueRow = Out<typeof materialIssueListRowSchema>;
+export type MaterialIssueDetail = Out<typeof materialIssueDetailResponseSchema>;
+export type MaterialIssueLine = MaterialIssueDetail['lines'][number];
+export type BudgetVsActual = Out<typeof budgetVsActualResponseSchema>;
 
 export type ApprovalFilters = {
   status?: ApprovalStatusKey;

@@ -20,6 +20,7 @@ import type {
   ActivityItem,
   Budget,
   BudgetDetail,
+  BudgetVsActual,
   BoqRow,
   Contract,
   CostCode,
@@ -402,6 +403,20 @@ export function useCurrentBudget(projectId: string, enabled = true) {
       ),
     enabled,
     retry: false,
+  });
+}
+
+/** Budget against committed (open purchase orders) and actual cost (posted material issues and other recorded cost), by cost code. */
+export function useBudgetVsActual(projectId: string, enabled = true) {
+  return useQuery({
+    queryKey: projectKeys.costVsBudget(projectId),
+    queryFn: async () =>
+      unwrapAs<BudgetVsActual>(
+        await api.GET('/v1/projects/{id}/budget-vs-actual', {
+          params: { path: { id: projectId }, query: apiQuery({}) },
+        }),
+      ),
+    enabled,
   });
 }
 

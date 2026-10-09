@@ -125,8 +125,20 @@ function Items({ po }: { po: PurchaseOrderDetail }) {
 }
 
 function Receipts({ po }: { po: PurchaseOrderDetail }) {
+  const canReceive = useCan('procurement.receipt', 'CREATE', { projectId: po.projectId, warehouseId: po.warehouseId });
+  const receivable = ['APPROVED', 'SENT', 'PARTIALLY_RECEIVED'].includes(po.status);
   return (
-    <Panel title="Goods receipts" bodyClassName="p-0">
+    <Panel
+      title="Goods receipts"
+      bodyClassName="p-0"
+      actions={
+        canReceive && receivable ? (
+          <Button asChild size="sm" variant="primary">
+            <Link href={`/inventory/receipts/new?orderId=${po.id}`}>Receive goods</Link>
+          </Button>
+        ) : undefined
+      }
+    >
       {po.receipts.length === 0 ? (
         <EmptyState
           compact
@@ -151,7 +163,11 @@ function Receipts({ po }: { po: PurchaseOrderDetail }) {
           <tbody>
             {po.receipts.map((receipt) => (
               <tr key={receipt.id} className="border-t border-border">
-                <td className="px-4 py-2 font-mono text-xs font-medium">{receipt.number}</td>
+                <td className="px-4 py-2 font-mono text-xs font-medium">
+                  <Link href={`/inventory/receipts/${receipt.id}`} className="text-primary hover:underline">
+                    {receipt.number}
+                  </Link>
+                </td>
                 <td className="px-2 py-2">{formatDate(receipt.receiptDate)}</td>
                 <td className="px-2 py-2">
                   <StatusBadge status={receipt.status} />

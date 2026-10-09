@@ -10,6 +10,7 @@ export const documentTypeLabel = (documentType: string): string => titleCase(doc
 export function documentHref(documentType: string, documentId: string): string | null {
   if (documentType === 'PURCHASE_REQUISITION') return `/procurement/requests/${documentId}`;
   if (documentType === 'PURCHASE_ORDER') return `/procurement/orders/${documentId}`;
+  if (documentType === 'MATERIAL_REQUEST') return `/inventory/material-requests/${documentId}`;
   return null;
 }
 

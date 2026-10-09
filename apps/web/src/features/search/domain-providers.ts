@@ -1,12 +1,15 @@
 'use client';
 
-import { FolderKanban, Package, ShoppingCart, Truck, ClipboardList } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, FolderKanban, Package, PackageCheck, PackageMinus, ShoppingCart, Truck } from 'lucide-react';
 import * as React from 'react';
 import { canUser } from '@/features/auth/permissions';
 import { api } from '@/lib/api/browser';
 import { apiQuery, unwrapAs } from '@/lib/api/errors';
 import type {
+  GoodsReceiptRow,
   ItemRow,
+  MaterialIssueRow,
+  MaterialRequestRow,
   Page,
   ProjectRow,
   PurchaseOrderRow,
@@ -70,6 +73,60 @@ export const DOMAIN_PROVIDERS: SearchProvider[] = [
         subtitle: pr.purpose ?? pr.project.name,
         href: `/procurement/requests/${pr.id}`,
         icon: ClipboardList,
+      }));
+    },
+  },
+  {
+    id: 'goods-receipts',
+    group: 'Goods receipts',
+    order: 26,
+    search: async (query, { user, signal }) => {
+      if (!canUser(user, 'procurement.receipt', 'VIEW')) return [];
+      const page = unwrapAs<Page<GoodsReceiptRow>>(
+        await api.GET('/v1/goods-receipts', { params: { query: apiQuery({ search: query, limit: LIMIT }) }, signal }),
+      );
+      return page.items.map((receipt) => ({
+        id: `grn:${receipt.id}`,
+        title: receipt.number,
+        subtitle: `${receipt.supplier.name} · ${receipt.order.number}`,
+        href: `/inventory/receipts/${receipt.id}`,
+        icon: PackageCheck,
+      }));
+    },
+  },
+  {
+    id: 'material-requests',
+    group: 'Material requests',
+    order: 27,
+    search: async (query, { user, signal }) => {
+      if (!canUser(user, 'inventory.request', 'VIEW')) return [];
+      const page = unwrapAs<Page<MaterialRequestRow>>(
+        await api.GET('/v1/material-requests', { params: { query: apiQuery({ search: query, limit: LIMIT }) }, signal }),
+      );
+      return page.items.map((request) => ({
+        id: `mr:${request.id}`,
+        title: request.number,
+        subtitle: request.purpose ?? request.project.name,
+        href: `/inventory/material-requests/${request.id}`,
+        icon: ClipboardCheck,
+      }));
+    },
+  },
+  {
+    id: 'material-issues',
+    group: 'Material issues',
+    order: 28,
+    search: async (query, { user, signal }) => {
+      if (!canUser(user, 'inventory.issue', 'VIEW')) return [];
+      const page = unwrapAs<Page<MaterialIssueRow>>(
+        await api.GET('/v1/material-issues', { params: { query: apiQuery({ search: query, limit: LIMIT }) }, signal }),
+      );
+      return page.items.map((issue) => ({
+        id: `mi:${issue.id}`,
+        title: issue.number,
+        subtitle: `${issue.project.name} · ${issue.warehouse.name}`,
+        href: `/inventory/material-issues/${issue.id}`,
+        icon: PackageMinus,
       }));
     },
   },

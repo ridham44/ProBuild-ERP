@@ -75,16 +75,16 @@ describe('navigation filtering', () => {
     const ids = flatIds(makeUser({ isSuperAdmin: true }));
     expect(ids).toContain('users');
     expect(ids).toContain('purchase-orders');
-    expect(ids).not.toContain('goods-receipts');
-    expect(ids).not.toContain('stock');
+    expect(ids).not.toContain('transfers');
+    expect(ids).not.toContain('stock-counts');
     for (const item of NAV_ITEMS.filter((entry) => ids.includes(entry.id)))
       expect(item.implemented).toBe(true);
   });
 
   it('lists planned areas as such only when explicitly requested (development aid)', () => {
     const groups = getVisibleNav(makeUser({ isSuperAdmin: true }), { showPlanned: true });
-    const receipts = groups.flatMap((group) => group.items).find((item) => item.id === 'goods-receipts');
-    expect(receipts?.planned).toBe(true);
+    const transfers = groups.flatMap((group) => group.items).find((item) => item.id === 'transfers');
+    expect(transfers?.planned).toBe(true);
   });
 
   it('keeps groups in directive order and drops empty groups', () => {
@@ -146,6 +146,28 @@ describe('procurement and master-data entries', () => {
     expect(findNavItem('/procurement/orders/abc/edit')?.id).toBe('purchase-orders');
     expect(findNavItem('/procurement/requests/new')?.id).toBe('requests');
     expect(findNavItem('/inventory/warehouses/x')?.id).toBe('warehouses');
+  });
+});
+
+describe('inventory entries', () => {
+  it('shows each screen only to roles that can view its module', () => {
+    const storekeeper = makeUser({
+      grants: [
+        grant('procurement.receipt', 'VIEW'),
+        grant('inventory.stock', 'VIEW'),
+        grant('inventory.issue', 'VIEW'),
+      ],
+    });
+    expect(flatIds(storekeeper)).toEqual(['dashboard', 'goods-receipts', 'stock', 'stock-movements', 'material-issues']);
+    expect(flatIds(makeUser({ grants: [grant('inventory.request', 'VIEW')] }))).toEqual(['dashboard', 'material-requests']);
+  });
+
+  it('resolves inventory routes to their entry', () => {
+    expect(findNavItem('/inventory/receipts/new')?.id).toBe('goods-receipts');
+    expect(findNavItem('/inventory/stock')?.id).toBe('stock');
+    expect(findNavItem('/inventory/movements')?.id).toBe('stock-movements');
+    expect(findNavItem('/inventory/material-requests/abc')?.id).toBe('material-requests');
+    expect(findNavItem('/inventory/material-issues/abc')?.id).toBe('material-issues');
   });
 });
 

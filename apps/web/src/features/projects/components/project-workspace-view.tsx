@@ -36,6 +36,7 @@ import { ProgressBar } from './progress-bar';
 import { ProjectBoq } from './project-boq';
 import { ProjectEditDrawer } from './project-edit-drawer';
 import { ProjectFinancial } from './project-financial';
+import { ProjectMaterials } from './project-materials';
 import { ProjectOverview } from './project-overview';
 import { ProjectProcurement } from './project-procurement';
 import { ProjectTeam } from './project-team';
@@ -79,6 +80,8 @@ export function ProjectWorkspaceView({ id }: { id: string }) {
   const canSeeBoq = useCan('projects.boq', 'VIEW', { projectId: id });
   const canSeeBudget = useCan('projects.budget', 'VIEW', { projectId: id });
   const canSeeReq = useCan('procurement.requisition', 'VIEW', { projectId: id });
+  const canSeeMaterialRequests = useCan('inventory.request', 'VIEW', { projectId: id });
+  const canSeeMaterialIssues = useCan('inventory.issue', 'VIEW', { projectId: id });
   const activity = useProjectActivity(id);
   const changeStatus = useChangeProjectStatus(id);
   const [editOpen, setEditOpen] = React.useState(false);
@@ -164,6 +167,9 @@ export function ProjectWorkspaceView({ id }: { id: string }) {
               ...(canSeeBoq ? [{ id: 'boq', label: 'BOQ', content: <ProjectBoq project={data} /> }] : []),
               ...(canSeeWbs ? [{ id: 'wbs', label: 'WBS', content: <ProjectWbs project={data} /> }] : []),
               ...(canSeeReq ? [{ id: 'procurement', label: 'Procurement', content: <ProjectProcurement projectId={id} /> }] : []),
+              ...(canSeeMaterialRequests || canSeeMaterialIssues
+                ? [{ id: 'materials', label: 'Materials', content: <ProjectMaterials projectId={id} /> }]
+                : []),
               { id: 'team', label: 'Team', content: <ProjectTeam project={data} canEdit={canEdit} /> },
               {
                 id: 'activity',
