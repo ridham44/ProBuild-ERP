@@ -76,7 +76,7 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
           onOpenNotifications={() => setNotificationsOpen(true)}
           onShowShortcuts={openHelp}
         />
-        <main id="main" tabIndex={-1} className="scroll-thin flex-1 overflow-y-auto outline-none print:overflow-visible">
+        <main id="main" tabIndex={-1} className="scroll-thin relative flex-1 overflow-y-auto outline-none print:overflow-visible">
           <div className="mx-auto w-full max-w-[1480px] px-4 py-5 md:px-6 md:py-6 lg:px-8"><PageModuleProvider value={pageModule}>{children}</PageModuleProvider>
           </div>
         </main>
