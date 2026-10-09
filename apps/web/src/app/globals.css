@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 /*
- * ProBuild design tokens. Ink-slate base, one safety-orange accent used for primary actions,
+ * ProBuild design tokens. Navy base and one royal-blue accent taken from the ProBuild logo, used for primary actions,
  * focus and the active navigation marker. Colours are HSL channels so Tailwind can apply alpha.
  */
 @layer base {
   :root {
     --background: 210 20% 97%;
-    --foreground: 217 33% 12%;
+    --foreground: 224 45% 12%;
     --surface: 0 0% 100%;
     --surface-muted: 210 20% 95%;
     --surface-raised: 0 0% 100%;
@@ -18,14 +18,14 @@
     --input: 214 14% 68%;
     --muted-foreground: 215 14% 36%;
     --subtle-foreground: 215 10% 46%;
-    --ring: 17 88% 45%;
+    --ring: 221 83% 46%;
     --shadow: 217 40% 10%;
 
-    --primary: 17 88% 40%;
-    --primary-hover: 17 90% 33%;
+    --primary: 221 83% 40%;
+    --primary-hover: 222 85% 32%;
     --primary-foreground: 0 0% 100%;
-    --primary-subtle: 24 100% 95%;
-    --primary-border: 22 90% 78%;
+    --primary-subtle: 218 100% 96%;
+    --primary-border: 218 85% 80%;
 
     --success: 152 55% 24%;
     --success-subtle: 145 45% 94%;
@@ -52,12 +52,12 @@
     --overdue-subtle: 14 95% 94%;
     --overdue-border: 14 70% 74%;
 
-    --sidebar: 217 30% 11%;
+    --sidebar: 226 55% 10%;
     --sidebar-foreground: 214 22% 80%;
     --sidebar-muted: 215 14% 56%;
-    --sidebar-active: 217 28% 18%;
-    --sidebar-border: 217 25% 19%;
-    --sidebar-accent: 22 95% 58%;
+    --sidebar-active: 224 45% 18%;
+    --sidebar-border: 224 38% 19%;
+    --sidebar-accent: 196 100% 55%;
   }
 
   :root[data-theme='dark'] {
@@ -71,14 +71,14 @@
     --input: 217 14% 36%;
     --muted-foreground: 214 16% 70%;
     --subtle-foreground: 214 12% 58%;
-    --ring: 22 92% 56%;
+    --ring: 214 95% 62%;
     --shadow: 0 0% 0%;
 
-    --primary: 20 90% 52%;
-    --primary-hover: 20 92% 58%;
-    --primary-foreground: 217 30% 8%;
-    --primary-subtle: 20 40% 16%;
-    --primary-border: 20 50% 32%;
+    --primary: 217 92% 62%;
+    --primary-hover: 214 95% 68%;
+    --primary-foreground: 226 50% 8%;
+    --primary-subtle: 222 45% 17%;
+    --primary-border: 220 50% 34%;
 
     --success: 145 50% 62%;
     --success-subtle: 150 30% 14%;
@@ -105,9 +105,9 @@
     --overdue-subtle: 14 40% 16%;
     --overdue-border: 14 40% 32%;
 
-    --sidebar: 217 32% 6%;
-    --sidebar-active: 217 26% 13%;
-    --sidebar-border: 217 22% 14%;
+    --sidebar: 226 55% 6%;
+    --sidebar-active: 224 40% 13%;
+    --sidebar-border: 224 32% 14%;
   }
 
   * {
