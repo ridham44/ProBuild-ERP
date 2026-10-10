@@ -2,6 +2,7 @@
 
 import { Check, Copy } from 'lucide-react';
 import * as React from 'react';
+import { copyToClipboard } from '@/lib/clipboard';
 import { cn } from '@/lib/utils';
 
 /** A read-only value with a copy button, for the demo credentials. */
@@ -12,12 +13,7 @@ export function CopyField({ label, value }: { label: string; value: string }) {
   React.useEffect(() => () => clearTimeout(timer.current), []);
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setState('copied');
-    } catch {
-      setState('failed');
-    }
+    setState((await copyToClipboard(value)) ? 'copied' : 'failed');
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setState('idle'), 2000);
   };

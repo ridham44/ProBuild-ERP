@@ -19,12 +19,12 @@ const OUT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../p
 
 /** `open` is a list page plus the link text of the seeded document to open from it. */
 const SHOTS = [
-  { file: 'project-financial.jpg', open: ['/projects', 'PRJ-2026-001'], tab: 'financial' },
+  { file: 'project-financial.jpg', open: ['/projects', 'Metro Heights Tower A'], tab: 'financial' },
   { file: 'requisition-approval.jpg', open: ['/procurement/requests', 'PR-2026-00001'] },
   { file: 'rfq-comparison.jpg', open: ['/procurement/rfqs', 'RFQ-2026-00001'], tab: 'comparison' },
   { file: 'goods-receipt-qc.jpg', open: ['/inventory/receipts', 'GRN-2026-00001'] },
   { file: 'stock.jpg', open: ['/inventory/stock'] },
-  { file: 'project-materials.jpg', open: ['/projects', 'PRJ-2026-001'], tab: 'materials' },
+  { file: 'project-materials.jpg', open: ['/projects', 'Metro Heights Tower A'], tab: 'materials' },
 ];
 
 /** Signs in through the same-origin API proxy, so the session cookie lands in the browser context. */
