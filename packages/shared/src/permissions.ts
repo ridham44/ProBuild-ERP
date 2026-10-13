@@ -96,8 +96,8 @@ type RoleGrant = { modules: string[]; actions: PermissionActionKey[] | 'ALL' };
 const READ: PermissionActionKey[] = ['VIEW', 'EXPORT', 'PRINT'];
 const WRITE: PermissionActionKey[] = ['VIEW', 'CREATE', 'EDIT', 'SUBMIT', 'EXPORT', 'PRINT'];
 const OPERATE: PermissionActionKey[] = [...WRITE, 'POST', 'CANCEL', 'TRANSFER', 'ADJUST'];
-/** Anyone who raises a material request must be able to pick the warehouse it is issued from. */
-const WAREHOUSE_LOOKUP: RoleGrant = { modules: ['organization.warehouse'], actions: ['VIEW'] };
+/** Anyone who raises a material request must be able to pick the warehouse it is issued from and its cost code. */
+const MATERIAL_REQUEST_LOOKUPS: RoleGrant = { modules: ['organization.warehouse', 'projects.costcode'], actions: ['VIEW'] };
 
 /** A pattern ending in ".*" matches every module in that domain. "*" matches everything. */
 export const DEFAULT_ROLES: Record<string, RoleGrant[]> = {
@@ -118,20 +118,20 @@ export const DEFAULT_ROLES: Record<string, RoleGrant[]> = {
     { modules: ['procurement.requisition', 'procurement.order'], actions: [...WRITE, 'APPROVE', 'REJECT'] },
     { modules: ['procurement.requisition'], actions: ['CANCEL', 'CLOSE'] },
     { modules: ['reports.view', 'documents.document', 'approvals.inbox', 'ai.assistant', 'parties.*', 'inventory.stock', 'inventory.item', 'finance.billing'], actions: [...WRITE, 'APPROVE', 'REJECT'] },
-    WAREHOUSE_LOOKUP,
+    MATERIAL_REQUEST_LOOKUPS,
   ],
   'Project Engineer': [
     { modules: ['projects.*', 'field.*', 'inventory.request', 'procurement.requisition'], actions: WRITE },
     { modules: ['procurement.requisition'], actions: ['CANCEL'] },
     { modules: ['inventory.stock', 'inventory.item', 'reports.view', 'documents.document'], actions: WRITE },
     { modules: ['approvals.inbox'], actions: ['VIEW'] },
-    WAREHOUSE_LOOKUP,
+    MATERIAL_REQUEST_LOOKUPS,
   ],
   'Site Engineer': [
     { modules: ['field.*', 'projects.rfi', 'inventory.request', 'projects.drawing'], actions: WRITE },
     { modules: ['projects.project', 'projects.boq', 'projects.wbs', 'inventory.stock', 'inventory.item'], actions: READ },
     { modules: ['documents.document'], actions: WRITE },
-    WAREHOUSE_LOOKUP,
+    MATERIAL_REQUEST_LOOKUPS,
   ],
   'Quantity Surveyor': [
     { modules: ['projects.estimate', 'projects.boq', 'projects.budget', 'projects.variation', 'projects.claim', 'projects.wbs', 'projects.costcode', 'subcontract.*', 'finance.billing'], actions: WRITE },
@@ -151,7 +151,7 @@ export const DEFAULT_ROLES: Record<string, RoleGrant[]> = {
   'Warehouse Staff': [
     { modules: ['inventory.stock', 'inventory.issue', 'inventory.return', 'inventory.transfer', 'inventory.count', 'inventory.request', 'procurement.receipt'], actions: [...WRITE, 'POST', 'TRANSFER'] },
     { modules: ['inventory.item', 'projects.project', 'projects.wbs', 'projects.costcode', 'projects.boq', 'procurement.order'], actions: ['VIEW'] },
-    WAREHOUSE_LOOKUP,
+    MATERIAL_REQUEST_LOOKUPS,
   ],
   HR: [
     { modules: ['workforce.*', 'compliance.document'], actions: [...OPERATE, 'APPROVE', 'REJECT'] },
@@ -177,12 +177,12 @@ export const DEFAULT_ROLES: Record<string, RoleGrant[]> = {
   Supervisor: [
     { modules: ['field.*', 'workforce.attendance', 'inventory.request'], actions: WRITE },
     { modules: ['projects.project', 'projects.wbs', 'projects.boq', 'inventory.stock'], actions: READ },
-    WAREHOUSE_LOOKUP,
+    MATERIAL_REQUEST_LOOKUPS,
   ],
   Foreman: [
     { modules: ['field.report', 'field.progress', 'workforce.attendance', 'inventory.request', 'inventory.return'], actions: ['VIEW', 'CREATE', 'SUBMIT'] },
     { modules: ['projects.project', 'projects.wbs', 'projects.boq'], actions: ['VIEW'] },
-    WAREHOUSE_LOOKUP,
+    MATERIAL_REQUEST_LOOKUPS,
   ],
   'Client Portal': [{ modules: ['portal.client'], actions: ['VIEW', 'APPROVE', 'CREATE'] }],
   'Supplier Portal': [{ modules: ['portal.supplier'], actions: ['VIEW', 'CREATE', 'EDIT'] }],
