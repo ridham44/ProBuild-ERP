@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "nest build",
-    "dev": "nest start --watch",
-    "start": "node dist/main.js",
+    "build": "node init && nest build",
+    "dev": "node init && nest start --watch",
+    "start": "node init && node dist/main.js",
     "lint": "eslint src test",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
